@@ -1,0 +1,132 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-monitoring-spark-co-nz-v1alpha1-containerscan
+  failurePolicy: Fail
+  name: mcontainerscan.kb.io
+  rules:
+  - apiGroups:
+    - monitoring.spark.co.nz
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - containerscans
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-monitoring-spark-co-nz-v1alpha1-portscan
+  failurePolicy: Fail
+  name: mportscan.kb.io
+  rules:
+  - apiGroups:
+    - monitoring.spark.co.nz
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - portscans
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-monitoring-spark-co-nz-v1alpha1-vmscan
+  failurePolicy: Fail
+  name: mvmscan.kb.io
+  rules:
+  - apiGroups:
+    - monitoring.spark.co.nz
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - vmscans
+  sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-monitoring-spark-co-nz-v1alpha1-containerscan
+  failurePolicy: Fail
+  name: vcontainerscan.kb.io
+  rules:
+  - apiGroups:
+    - monitoring.spark.co.nz
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - containerscans
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-monitoring-spark-co-nz-v1alpha1-portscan
+  failurePolicy: Fail
+  name: vportscan.kb.io
+  rules:
+  - apiGroups:
+    - monitoring.spark.co.nz
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - portscans
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-monitoring-spark-co-nz-v1alpha1-vmscan
+  failurePolicy: Fail
+  name: vvmscan.kb.io
+  rules:
+  - apiGroups:
+    - monitoring.spark.co.nz
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - vmscans
+  sideEffects: None
