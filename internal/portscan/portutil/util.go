@@ -321,11 +321,11 @@ func basicAuth(username, password string) string {
 	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
 
-func SendEmailAlert(target string, filename string, spec *v1alpha1.PortScanSpec) {
+func SendEmailAlert(target string, filename string, spec *v1alpha1.PortScanSpec, host string) {
 	targets := strings.SplitN(target, ":", 2)
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 
-		message := fmt.Sprintf(`/bin/echo "target %s is unreachable on port %s" | /usr/sbin/sendmail -f %s -S %s %s`, targets[0], targets[1], spec.Email, spec.RelayHost, spec.Email)
+		message := fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: Port unreachability alert from %s" "target %s is unreachable on port %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", host, targets[0], targets[1], spec.Email, spec.RelayHost, spec.Email)
 		cmd3 := exec.Command("/bin/bash", "-c", message)
 		err := cmd3.Run()
 		if err != nil {
@@ -337,7 +337,7 @@ func SendEmailAlert(target string, filename string, spec *v1alpha1.PortScanSpec)
 		data, _ := ReadFile(filename)
 		fmt.Println(data)
 		if data != "sent" {
-			message := fmt.Sprintf(`/bin/echo "target %s is unreachable on port %s" | /usr/sbin/sendmail -f %s -S %s %s`, targets[0], targets[1], spec.Email, spec.RelayHost, spec.Email)
+			message := fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: Port unreachability alert from %s" "target %s is unreachable on port %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", host, targets[0], targets[1], spec.Email, spec.RelayHost, spec.Email)
 			cmd3 := exec.Command("/bin/bash", "-c", message)
 			err := cmd3.Run()
 			if err != nil {
@@ -348,14 +348,14 @@ func SendEmailAlert(target string, filename string, spec *v1alpha1.PortScanSpec)
 	}
 }
 
-func SendEmailReachableAlert(target string, filename string, spec *v1alpha1.PortScanSpec) {
+func SendEmailReachableAlert(target string, filename string, spec *v1alpha1.PortScanSpec, host string) {
 	targets := strings.SplitN(target, ":", 2)
 	data, err := ReadFile(filename)
 	if err != nil {
 		fmt.Println(err)
 	}
 	if data == "sent" {
-		message := fmt.Sprintf(`/bin/echo "target %s is reachable again on port %s" | /usr/sbin/sendmail -f %s -S %s %s`, targets[0], targets[1], spec.Email, spec.RelayHost, spec.Email)
+		message := fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: Port reachability alert from %s" "target %s is reachable again on port %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", host, targets[0], targets[1], spec.Email, spec.RelayHost, spec.Email)
 		cmd3 := exec.Command("/bin/bash", "-c", message)
 		err := cmd3.Run()
 		if err != nil {

@@ -143,9 +143,9 @@ func SetNonViolationCondition(status *v1alpha1.VmScanStatus, conditionStatus v1a
 	}
 }
 
-func SendEmailAlert(ns string, nodeName string, filename string, spec *v1alpha1.VmScanSpec) {
+func SendEmailAlert(ns string, nodeName string, filename string, spec *v1alpha1.VmScanSpec, host string) {
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		message := fmt.Sprintf(`/bin/echo "one or more VMIs are found in target namespace %s are found on the same node %s" | /usr/sbin/sendmail -f %s -S %s %s`, ns, nodeName, spec.Email, spec.RelayHost, spec.Email)
+		message := fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: VM placement alert from %s" ""  "one or more VMIs are found in target namespace %s are found on the same node %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", host, ns, nodeName, spec.Email, spec.RelayHost, spec.Email)
 		cmd3 := exec.Command("/bin/bash", "-c", message)
 		err := cmd3.Run()
 		if err != nil {
@@ -157,7 +157,7 @@ func SendEmailAlert(ns string, nodeName string, filename string, spec *v1alpha1.
 		data, _ := ReadFile(filename)
 		fmt.Println(data)
 		if data != "sent" {
-			message := fmt.Sprintf(`/bin/echo "one or more VMIs are found in target namespace %s are found on the same node %s" | /usr/sbin/sendmail -f %s -S %s %s`, ns, nodeName, spec.Email, spec.RelayHost, spec.Email)
+			message := fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: VM placement alert from %s" "" "one or more VMIs are found in target namespace %s are found on the same node %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", host, ns, nodeName, spec.Email, spec.RelayHost, spec.Email)
 			cmd3 := exec.Command("/bin/bash", "-c", message)
 			err := cmd3.Run()
 			if err != nil {
@@ -168,13 +168,13 @@ func SendEmailAlert(ns string, nodeName string, filename string, spec *v1alpha1.
 	}
 }
 
-func SendEmailRecoveredAlert(ns string, nodeName string, filename string, spec *v1alpha1.VmScanSpec) {
+func SendEmailRecoveredAlert(ns string, nodeName string, filename string, spec *v1alpha1.VmScanSpec, host string) {
 	data, err := ReadFile(filename)
 	if err != nil {
 		fmt.Printf("Failed to send the alert: %s", err)
 	}
 	if data == "sent" {
-		message := fmt.Sprintf(`/bin/echo "Previously VMIs placement violation is now resolve in target namespace %s target node %s" | /usr/sbin/sendmail -f %s -S %s %s`, ns, nodeName, spec.Email, spec.RelayHost, spec.Email)
+		message := fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: VM placement alert from %s" "Previously VMIs placement violation is now resolve in target namespace %s target node %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", host, ns, nodeName, spec.Email, spec.RelayHost, spec.Email)
 		cmd3 := exec.Command("/bin/bash", "-c", message)
 		err := cmd3.Run()
 		if err != nil {

@@ -212,7 +212,7 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 						}
 					}
 					if !*vmSpec.SuspendEmailAlert {
-						vmUtil.SendEmailAlert(ns, node.Name, fmt.Sprintf("%s-%s.txt", ns, node.Name), vmSpec)
+						vmUtil.SendEmailAlert(ns, node.Name, fmt.Sprintf("%s-%s.txt", ns, node.Name), vmSpec, node.Name)
 					}
 					if *vmSpec.NotifyExtenal && !vmStatus.ExternalNotified {
 						err := vmUtil.NotifyExternalSystem(data, "firing", ns, node.Name, vmSpec.ExternalURL, string(username), string(password), fmt.Sprintf("%s-%s-ext.txt", ns, node.Name), vmStatus)
@@ -292,7 +292,7 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 							}
 						}
 						if !*vmSpec.SuspendEmailAlert {
-							vmUtil.SendEmailAlert(ns, node.Name, fmt.Sprintf("%s-%s.txt", ns, node.Name), vmSpec)
+							vmUtil.SendEmailAlert(ns, node.Name, fmt.Sprintf("%s-%s.txt", ns, node.Name), vmSpec, node.Name)
 						}
 						if *vmSpec.NotifyExtenal && !vmStatus.ExternalNotified {
 
@@ -325,7 +325,7 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 							os.Remove(fmt.Sprintf("%s-%s.txt", ns, node.Name))
 							os.Remove(fmt.Sprintf("%s-%s-ext.txt", ns, node.Name))
 							if !*vmSpec.SuspendEmailAlert {
-								vmUtil.SendEmailRecoveredAlert(ns, node.Name, fmt.Sprintf("%s-%s.txt", ns, node.Name), vmSpec)
+								vmUtil.SendEmailRecoveredAlert(ns, node.Name, fmt.Sprintf("%s-%s.txt", ns, node.Name), vmSpec, node.Name)
 							}
 							if *vmSpec.NotifyExtenal && vmStatus.ExternalNotified {
 								fingerprint, err := vmUtil.ReadFile(fmt.Sprintf("%s-%s-ext.txt", ns, node.Name))

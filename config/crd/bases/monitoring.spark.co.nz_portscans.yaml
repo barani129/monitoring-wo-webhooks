@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.14.0
-    cert-manager.io/inject-ca-from: shift-stack/webhook-server-secret
+    # cert-manager.io/inject-ca-from: shift-stack/webhook-server-secret
   name: portscans.monitoring.spark.co.nz
 spec:
   group: monitoring.spark.co.nz

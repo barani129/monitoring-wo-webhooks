@@ -184,7 +184,6 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 				return ctrl.Result{}, fmt.Errorf("%w, namespace: %s, reason: %v", errGetNamespace, actualNamespace, err)
 			}
 			if len(containerStatus.AffectedPods) > 0 {
-				fmt.Println("pods in status", containerStatus.AffectedPods)
 				for _, p := range containerStatus.AffectedPods {
 					po := strings.SplitN(p, ":ns:", 2)
 					fmt.Println("pods name:", po[0])
@@ -216,6 +215,7 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 				return ctrl.Result{}, fmt.Errorf("unable to retrieve the pods in the namespace %s %s", actualNamespace, err)
 			}
 			for _, pod := range pods.Items {
+				host := pod.Spec.NodeName
 				for _, container := range pod.Status.ContainerStatuses {
 					if container.State.Terminated != nil {
 						if container.State.Terminated.ExitCode != 0 {
@@ -233,7 +233,7 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 								}
 								afpods = append(afpods, container.Name)
 								if !*containerSpec.SuspendEmailAlert {
-									util.SendEmailAlert(pod.Name, "cont", containerSpec, fmt.Sprintf("/%s-%s-%s.txt", "pod", pod.Name, actualNamespace))
+									util.SendEmailAlert(pod.Name, "cont", containerSpec, fmt.Sprintf("/%s-%s-%s.txt", "pod", pod.Name, actualNamespace), host)
 								}
 								if *containerSpec.NotifyExtenal && !containerStatus.ExternalNotified {
 									err := util.NotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, "cont", containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", "pod", pod.Name, actualNamespace))
@@ -263,7 +263,76 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 								}
 								afcontainers = append(afcontainers, container.Name)
 								if !*containerSpec.SuspendEmailAlert {
-									util.SendEmailAlert(pod.Name, container.Name, containerSpec, fmt.Sprintf("/%s-%s-%s.txt", container.Name, pod.Name, actualNamespace))
+									util.SendEmailAlert(pod.Name, container.Name, containerSpec, fmt.Sprintf("/%s-%s-%s.txt", container.Name, pod.Name, actualNamespace), host)
+								}
+								if *containerSpec.NotifyExtenal && !containerStatus.ExternalNotified {
+									err := util.NotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, container.Name, containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
+									if err != nil {
+										log.Log.Info("Failed to notify the external system for pod %s and container %s", pod.Name, container.Name)
+									}
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
+									fmt.Println(fingerprint)
+									if err != nil {
+										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
+									}
+									incident, err := util.SetIncidentID(containerSpec, containerStatus, username, password, fingerprint)
+									if err != nil || incident == "" {
+										log.Log.Info("Failed to update the incident ID, either incident is getting created or other issues.")
+									}
+									if !slices.Contains(containerStatus.IncidentID, incident) && incident != "" && incident != "[Pending]" {
+										containerStatus.IncidentID = append(containerStatus.IncidentID, incident)
+									}
+								}
+							}
+						}
+					} else if container.State.Waiting != nil {
+						if container.State.Waiting.Reason == "CrashLoopBackOff" {
+
+							if !slices.Contains(containerStatus.AffectedPods, pod.Name+":ns:"+actualNamespace) {
+								containerStatus.AffectedPods = append(containerStatus.AffectedPods, pod.Name+":ns:"+actualNamespace)
+							}
+							if *containerSpec.AggregateAlerts {
+								err := util.CreateFile("pod", pod.Name, actualNamespace)
+								if err != nil {
+									log.Log.Info("Unable to create the file")
+								}
+								err = util.CreateExtFile("pod", pod.Name, actualNamespace)
+								if err != nil {
+									log.Log.Info("Unable to create the external file")
+								}
+								afpods = append(afpods, container.Name)
+								if !*containerSpec.SuspendEmailAlert {
+									util.SendEmailAlert(pod.Name, "cont", containerSpec, fmt.Sprintf("/%s-%s-%s.txt", "pod", pod.Name, actualNamespace), host)
+								}
+								if *containerSpec.NotifyExtenal && !containerStatus.ExternalNotified {
+									err := util.NotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, "cont", containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", "pod", pod.Name, actualNamespace))
+									if err != nil {
+										log.Log.Info("Failed to notify the external system for pod %s", pod.Name)
+									}
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/%s-%s-ext.txt", "pod", pod.Name))
+									if err != nil {
+										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
+									}
+									incident, err := util.SetIncidentID(containerSpec, containerStatus, username, password, fingerprint)
+									if err != nil || incident == "" {
+										log.Log.Info("Failed to update the incident ID, either incident is getting created or other issues.")
+									}
+									if !slices.Contains(containerStatus.IncidentID, incident) && incident != "" && incident != "[Pending]" {
+										containerStatus.IncidentID = append(containerStatus.IncidentID, incident)
+									}
+								}
+							} else {
+								err := util.CreateFile(container.Name, pod.Name, actualNamespace)
+								if err != nil {
+									log.Log.Info("Unable to create the file")
+								}
+								err = util.CreateExtFile(container.Name, pod.Name, actualNamespace)
+								if err != nil {
+									log.Log.Info("Unable to create the external file")
+								}
+								afcontainers = append(afcontainers, container.Name)
+								if !*containerSpec.SuspendEmailAlert {
+									util.SendEmailAlert(pod.Name, container.Name, containerSpec, fmt.Sprintf("/%s-%s-%s.txt", container.Name, pod.Name, actualNamespace), host)
 								}
 								if *containerSpec.NotifyExtenal && !containerStatus.ExternalNotified {
 									err := util.NotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, container.Name, containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
@@ -332,10 +401,8 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 					return ctrl.Result{}, fmt.Errorf("%w, namespace: %s, reason: %v", errGetNamespace, actualNamespace, err)
 				}
 				if len(containerStatus.AffectedPods) > 0 {
-					fmt.Println("pods in status", containerStatus.AffectedPods)
 					for _, p := range containerStatus.AffectedPods {
 						po := strings.SplitN(p, ":ns:", 2)
-						fmt.Println("pods name", po[0])
 						_, err := clientset.CoreV1().Pods(actualNamespace).Get(context.Background(), po[0], metav1.GetOptions{})
 						if err != nil {
 							if slices.Contains(containerStatus.AffectedPods, po[0]+":ns:"+actualNamespace) {
@@ -364,9 +431,11 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 					return ctrl.Result{}, fmt.Errorf("unable to retrieve the pods in the namespace %s %s", actualNamespace, err)
 				}
 				for _, pod := range pods.Items {
+					host := pod.Spec.NodeName
 					for _, container := range pod.Status.ContainerStatuses {
 						if container.State.Terminated != nil {
 							if container.State.Terminated.ExitCode != 0 {
+
 								if !slices.Contains(containerStatus.AffectedPods, pod.Name+":ns:"+actualNamespace) {
 									containerStatus.AffectedPods = append(containerStatus.AffectedPods, pod.Name+":ns:"+actualNamespace)
 								}
@@ -381,7 +450,7 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 									}
 									affpods = append(affpods, pod.Name)
 									if !*containerSpec.SuspendEmailAlert {
-										util.SendEmailAlert(pod.Name, "cont", containerSpec, fmt.Sprintf("/%s-%s.txt", "pod", pod.Name))
+										util.SendEmailAlert(pod.Name, "cont", containerSpec, fmt.Sprintf("/%s-%s.txt", "pod", pod.Name), host)
 									}
 									if *containerSpec.NotifyExtenal && !containerStatus.ExternalNotified {
 										err := util.SubNotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, "cont", containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", "pod", pod.Name, actualNamespace))
@@ -403,7 +472,7 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 								} else {
 									affcontainers = append(affcontainers, container.Name)
 									if !*containerSpec.SuspendEmailAlert {
-										util.SendEmailAlert(pod.Name, container.Name, containerSpec, fmt.Sprintf("/%s-%s.txt", container.Name, pod.Name))
+										util.SendEmailAlert(pod.Name, container.Name, containerSpec, fmt.Sprintf("/%s-%s.txt", container.Name, pod.Name), host)
 									}
 									if *containerSpec.NotifyExtenal && !containerStatus.ExternalNotified {
 										err := util.SubNotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, container.Name, containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
@@ -432,7 +501,7 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 								}
 								if *containerSpec.AggregateAlerts {
 									if !*containerSpec.SuspendEmailAlert {
-										util.SendEmailRecoverAlert(pod.Name, "cont", containerSpec, fmt.Sprintf("/%s-%s.txt", container.Name, pod.Name))
+										util.SendEmailRecoverAlert(pod.Name, "cont", containerSpec, fmt.Sprintf("/%s-%s.txt", container.Name, pod.Name), host)
 									}
 									if *containerSpec.NotifyExtenal && containerStatus.ExternalNotified {
 										fingerprint, err := util.ReadFile(fmt.Sprintf("/%s-%s-ext.txt", "pod", pod.Name))
@@ -455,7 +524,7 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 									}
 								} else {
 									if !*containerSpec.SuspendEmailAlert {
-										util.SendEmailRecoverAlert(pod.Name, container.Name, containerSpec, fmt.Sprintf("/%s-%s.txt", container.Name, pod.Name))
+										util.SendEmailRecoverAlert(pod.Name, container.Name, containerSpec, fmt.Sprintf("/%s-%s.txt", container.Name, pod.Name), host)
 									}
 									if *containerSpec.NotifyExtenal && containerStatus.ExternalNotified {
 										fingerprint, err := util.ReadFile(fmt.Sprintf("/%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
@@ -478,6 +547,75 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 									}
 								}
 
+							}
+						} else if container.State.Waiting != nil {
+							if container.State.Waiting.Reason == "CrashLoopBackOff" {
+								host := pod.Spec.NodeName
+								if !slices.Contains(containerStatus.AffectedPods, pod.Name+":ns:"+actualNamespace) {
+									containerStatus.AffectedPods = append(containerStatus.AffectedPods, pod.Name+":ns:"+actualNamespace)
+								}
+								if *containerSpec.AggregateAlerts {
+									err := util.CreateFile("pod", pod.Name, actualNamespace)
+									if err != nil {
+										log.Log.Info("Unable to create the file")
+									}
+									err = util.CreateExtFile("pod", pod.Name, actualNamespace)
+									if err != nil {
+										log.Log.Info("Unable to create the external file")
+									}
+									affpods = append(affpods, container.Name)
+									if !*containerSpec.SuspendEmailAlert {
+										util.SendEmailAlert(pod.Name, "cont", containerSpec, fmt.Sprintf("/%s-%s-%s.txt", "pod", pod.Name, actualNamespace), host)
+									}
+									if *containerSpec.NotifyExtenal && !containerStatus.ExternalNotified {
+										err := util.NotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, "cont", containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", "pod", pod.Name, actualNamespace))
+										if err != nil {
+											log.Log.Info("Failed to notify the external system for pod %s", pod.Name)
+										}
+										fingerprint, err := util.ReadFile(fmt.Sprintf("/%s-%s-ext.txt", "pod", pod.Name))
+										if err != nil {
+											log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
+										}
+										incident, err := util.SetIncidentID(containerSpec, containerStatus, username, password, fingerprint)
+										if err != nil || incident == "" {
+											log.Log.Info("Failed to update the incident ID, either incident is getting created or other issues.")
+										}
+										if !slices.Contains(containerStatus.IncidentID, incident) && incident != "" && incident != "[Pending]" {
+											containerStatus.IncidentID = append(containerStatus.IncidentID, incident)
+										}
+									}
+								} else {
+									err := util.CreateFile(container.Name, pod.Name, actualNamespace)
+									if err != nil {
+										log.Log.Info("Unable to create the file")
+									}
+									err = util.CreateExtFile(container.Name, pod.Name, actualNamespace)
+									if err != nil {
+										log.Log.Info("Unable to create the external file")
+									}
+									affcontainers = append(affcontainers, container.Name)
+									if !*containerSpec.SuspendEmailAlert {
+										util.SendEmailAlert(pod.Name, container.Name, containerSpec, fmt.Sprintf("/%s-%s-%s.txt", container.Name, pod.Name, actualNamespace), host)
+									}
+									if *containerSpec.NotifyExtenal && !containerStatus.ExternalNotified {
+										err := util.NotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, container.Name, containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
+										if err != nil {
+											log.Log.Info("Failed to notify the external system for pod %s and container %s", pod.Name, container.Name)
+										}
+										fingerprint, err := util.ReadFile(fmt.Sprintf("/%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
+										fmt.Println(fingerprint)
+										if err != nil {
+											log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
+										}
+										incident, err := util.SetIncidentID(containerSpec, containerStatus, username, password, fingerprint)
+										if err != nil || incident == "" {
+											log.Log.Info("Failed to update the incident ID, either incident is getting created or other issues.")
+										}
+										if !slices.Contains(containerStatus.IncidentID, incident) && incident != "" && incident != "[Pending]" {
+											containerStatus.IncidentID = append(containerStatus.IncidentID, incident)
+										}
+									}
+								}
 							}
 						}
 
