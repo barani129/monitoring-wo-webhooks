@@ -143,14 +143,14 @@ func SetReadyCondition(status *v1alpha1.ContainerScanStatus, conditionStatus v1a
 	}
 }
 
-func SendEmailAlert(podname string, contname string, spec *v1alpha1.ContainerScanSpec, filename string) {
+func SendEmailAlert(podname string, contname string, spec *v1alpha1.ContainerScanSpec, filename string, host string) {
 	data, _ := ReadFile(filename)
 	var message string
 	if data != "sent" {
 		if contname == "cont" {
-			message = fmt.Sprintf(`/bin/echo "pod %s has containers with exit code non-zero" | /usr/sbin/sendmail -f %s -S %s %s`, podname, spec.Email, spec.RelayHost, spec.Email)
+			message = fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: container alert from %s" "" "pod %s has containers with exit code non-zero or in status crashloopbackoff in cluster %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", host, podname, host, spec.Email, spec.RelayHost, spec.Email)
 		} else {
-			message = fmt.Sprintf(`/bin/echo "Container %s in pod %s is terminated with exit code non-zero" | /usr/sbin/sendmail -f %s -S %s %s`, podname, contname, spec.Email, spec.RelayHost, spec.Email)
+			message = fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: container alert from %s" "" "Container %s in pod %s is terminated with exit code non-zero in status crashloopbackoff in cluster %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", host, contname, podname, host, spec.Email, spec.RelayHost, spec.Email)
 		}
 		cmd3 := exec.Command("/bin/bash", "-c", message)
 		err := cmd3.Run()
@@ -161,14 +161,14 @@ func SendEmailAlert(podname string, contname string, spec *v1alpha1.ContainerSca
 	}
 }
 
-func SendEmailRecoverAlert(podname string, contname string, spec *v1alpha1.ContainerScanSpec, filename string) {
+func SendEmailRecoverAlert(podname string, contname string, spec *v1alpha1.ContainerScanSpec, filename string, host string) {
 	data, _ := ReadFile(filename)
 	var message string
 	if data == "sent" {
 		if contname == "cont" {
-			message = fmt.Sprintf(`/bin/echo "Containers in affected pod %s are recovered" | /usr/sbin/sendmail -f %s -S %s %s`, podname, spec.Email, spec.RelayHost, spec.Email)
+			message = fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: container alert from %s" "" "Containers in affected pod %s are recovered in cluster %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", host, podname, host, spec.Email, spec.RelayHost, spec.Email)
 		} else {
-			message = fmt.Sprintf(`/bin/echo "Container %s in pod %s is recovered" | /usr/sbin/sendmail -f %s -S %s %s`, podname, contname, spec.Email, spec.RelayHost, spec.Email)
+			message = fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: container alert from %s" "" "Container %s in pod %s is recovered in cluster %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", host, contname, podname, host, spec.Email, spec.RelayHost, spec.Email)
 		}
 		cmd3 := exec.Command("/bin/bash", "-c", message)
 		err := cmd3.Run()

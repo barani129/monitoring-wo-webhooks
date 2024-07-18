@@ -178,7 +178,7 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 					clusterStatus.AffectedTargets = append(clusterStatus.AffectedTargets, target)
 				}
 				if !*clusterSpec.SuspendEmailAlert {
-					clusterUtil.SendEmailAlert(target, fmt.Sprintf("%s-%s.txt", ip[0], ip[1]), clusterSpec)
+					clusterUtil.SendEmailAlert(target, fmt.Sprintf("%s-%s.txt", ip[0], ip[1]), clusterSpec, ip[0])
 				}
 				if *clusterSpec.NotifyExtenal && !clusterStatus.ExternalNotified {
 					err := clusterUtil.NotifyExternalSystem(data, "firing", target, clusterSpec.ExternalURL, string(username), string(password), fmt.Sprintf("%s-%s-ext.txt", ip[0], ip[1]), clusterStatus)
@@ -228,7 +228,7 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 							deleteElementSlice(clusterStatus.AffectedTargets, idx)
 						}
 						if !*clusterSpec.SuspendEmailAlert {
-							clusterUtil.SendEmailReachableAlert(target, fmt.Sprintf("%s-%s.txt", ip[0], ip[1]), clusterSpec)
+							clusterUtil.SendEmailReachableAlert(target, fmt.Sprintf("%s-%s.txt", ip[0], ip[1]), clusterSpec, ip[0])
 						}
 						if *clusterSpec.NotifyExtenal && clusterStatus.ExternalNotified {
 							fingerprint, err := clusterUtil.ReadFile(fmt.Sprintf("%s-%s-ext.txt", ip[0], ip[1]))
@@ -262,7 +262,7 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 						clusterStatus.AffectedTargets = append(clusterStatus.AffectedTargets, target)
 					}
 					if !*clusterSpec.SuspendEmailAlert {
-						clusterUtil.SendEmailAlert(target, fmt.Sprintf("%s-%s.txt", ip[0], ip[1]), clusterSpec)
+						clusterUtil.SendEmailAlert(target, fmt.Sprintf("%s-%s.txt", ip[0], ip[1]), clusterSpec, ip[0])
 					}
 					if *clusterSpec.NotifyExtenal && !clusterStatus.ExternalNotified {
 						err := clusterUtil.SubNotifyExternalSystem(data, "firing", target, clusterSpec.ExternalURL, string(username), string(password), fmt.Sprintf("%s-%s-ext.txt", ip[0], ip[1]), clusterStatus)
