@@ -235,7 +235,7 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 								if !*containerSpec.SuspendEmailAlert {
 									util.SendEmailAlert(pod.Name, "cont", containerSpec, fmt.Sprintf("/%s-%s-%s.txt", "pod", pod.Name, actualNamespace), host)
 								}
-								if *containerSpec.NotifyExtenal && !containerStatus.ExternalNotified {
+								if *containerSpec.NotifyExtenal {
 									err := util.NotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, "cont", containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", "pod", pod.Name, actualNamespace))
 									if err != nil {
 										log.Log.Info("Failed to notify the external system for pod %s", pod.Name)
@@ -251,6 +251,9 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 									if !slices.Contains(containerStatus.IncidentID, incident) && incident != "" && incident != "[Pending]" {
 										containerStatus.IncidentID = append(containerStatus.IncidentID, incident)
 									}
+									now := metav1.Now()
+									containerStatus.ExternalNotifiedTime = &now
+									containerStatus.ExternalNotified = true
 								}
 							} else {
 								err := util.CreateFile(container.Name, pod.Name, actualNamespace)
@@ -265,7 +268,7 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 								if !*containerSpec.SuspendEmailAlert {
 									util.SendEmailAlert(pod.Name, container.Name, containerSpec, fmt.Sprintf("/%s-%s-%s.txt", container.Name, pod.Name, actualNamespace), host)
 								}
-								if *containerSpec.NotifyExtenal && !containerStatus.ExternalNotified {
+								if *containerSpec.NotifyExtenal {
 									err := util.NotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, container.Name, containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
 									if err != nil {
 										log.Log.Info("Failed to notify the external system for pod %s and container %s", pod.Name, container.Name)
@@ -282,6 +285,9 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 									if !slices.Contains(containerStatus.IncidentID, incident) && incident != "" && incident != "[Pending]" {
 										containerStatus.IncidentID = append(containerStatus.IncidentID, incident)
 									}
+									now := metav1.Now()
+									containerStatus.ExternalNotifiedTime = &now
+									containerStatus.ExternalNotified = true
 								}
 							}
 						}
@@ -304,7 +310,7 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 								if !*containerSpec.SuspendEmailAlert {
 									util.SendEmailAlert(pod.Name, "cont", containerSpec, fmt.Sprintf("/%s-%s-%s.txt", "pod", pod.Name, actualNamespace), host)
 								}
-								if *containerSpec.NotifyExtenal && !containerStatus.ExternalNotified {
+								if *containerSpec.NotifyExtenal {
 									err := util.NotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, "cont", containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", "pod", pod.Name, actualNamespace))
 									if err != nil {
 										log.Log.Info("Failed to notify the external system for pod %s", pod.Name)
@@ -320,6 +326,9 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 									if !slices.Contains(containerStatus.IncidentID, incident) && incident != "" && incident != "[Pending]" {
 										containerStatus.IncidentID = append(containerStatus.IncidentID, incident)
 									}
+									now := metav1.Now()
+									containerStatus.ExternalNotifiedTime = &now
+									containerStatus.ExternalNotified = true
 								}
 							} else {
 								err := util.CreateFile(container.Name, pod.Name, actualNamespace)
@@ -334,7 +343,7 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 								if !*containerSpec.SuspendEmailAlert {
 									util.SendEmailAlert(pod.Name, container.Name, containerSpec, fmt.Sprintf("/%s-%s-%s.txt", container.Name, pod.Name, actualNamespace), host)
 								}
-								if *containerSpec.NotifyExtenal && !containerStatus.ExternalNotified {
+								if *containerSpec.NotifyExtenal {
 									err := util.NotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, container.Name, containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
 									if err != nil {
 										log.Log.Info("Failed to notify the external system for pod %s and container %s", pod.Name, container.Name)
@@ -351,6 +360,9 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 									if !slices.Contains(containerStatus.IncidentID, incident) && incident != "" && incident != "[Pending]" {
 										containerStatus.IncidentID = append(containerStatus.IncidentID, incident)
 									}
+									now := metav1.Now()
+									containerStatus.ExternalNotifiedTime = &now
+									containerStatus.ExternalNotified = true
 								}
 							}
 						}
@@ -452,7 +464,7 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 									if !*containerSpec.SuspendEmailAlert {
 										util.SendEmailAlert(pod.Name, "cont", containerSpec, fmt.Sprintf("/%s-%s.txt", "pod", pod.Name), host)
 									}
-									if *containerSpec.NotifyExtenal && !containerStatus.ExternalNotified {
+									if *containerSpec.NotifyExtenal {
 										err := util.SubNotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, "cont", containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", "pod", pod.Name, actualNamespace))
 										if err != nil {
 											log.Log.Info("Failed to notify the external system for pod %s", pod.Name)
@@ -468,13 +480,16 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 										if !slices.Contains(containerStatus.IncidentID, incident) && incident != "" && incident != "[Pending]" {
 											containerStatus.IncidentID = append(containerStatus.IncidentID, incident)
 										}
+										containerStatus.ExternalNotified = true
+										now := metav1.Now()
+										containerStatus.ExternalNotifiedTime = &now
 									}
 								} else {
 									affcontainers = append(affcontainers, container.Name)
 									if !*containerSpec.SuspendEmailAlert {
 										util.SendEmailAlert(pod.Name, container.Name, containerSpec, fmt.Sprintf("/%s-%s.txt", container.Name, pod.Name), host)
 									}
-									if *containerSpec.NotifyExtenal && !containerStatus.ExternalNotified {
+									if *containerSpec.NotifyExtenal {
 										err := util.SubNotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, container.Name, containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
 										if err != nil {
 											log.Log.Info("Failed to notify the external system for pod %s and container %s", pod.Name, container.Name)
@@ -491,7 +506,9 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 										if !slices.Contains(containerStatus.IncidentID, incident) && incident != "" && incident != "[Pending]" {
 											containerStatus.IncidentID = append(containerStatus.IncidentID, incident)
 										}
-
+										containerStatus.ExternalNotified = true
+										now := metav1.Now()
+										containerStatus.ExternalNotifiedTime = &now
 									}
 								}
 							} else {
@@ -520,6 +537,8 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 										if err != nil {
 											log.Log.Info("Failed to notify the external system for pod %s", pod.Name)
 										}
+										now := metav1.Now()
+										containerStatus.ExternalNotifiedTime = &now
 
 									}
 								} else {
@@ -543,6 +562,8 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 										if err != nil {
 											log.Log.Info("Failed to notify the external system for pod %s and container %s", pod.Name, container.Name)
 										}
+										now := metav1.Now()
+										containerStatus.ExternalNotifiedTime = &now
 
 									}
 								}
@@ -567,7 +588,7 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 									if !*containerSpec.SuspendEmailAlert {
 										util.SendEmailAlert(pod.Name, "cont", containerSpec, fmt.Sprintf("/%s-%s-%s.txt", "pod", pod.Name, actualNamespace), host)
 									}
-									if *containerSpec.NotifyExtenal && !containerStatus.ExternalNotified {
+									if *containerSpec.NotifyExtenal {
 										err := util.NotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, "cont", containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", "pod", pod.Name, actualNamespace))
 										if err != nil {
 											log.Log.Info("Failed to notify the external system for pod %s", pod.Name)
@@ -583,6 +604,9 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 										if !slices.Contains(containerStatus.IncidentID, incident) && incident != "" && incident != "[Pending]" {
 											containerStatus.IncidentID = append(containerStatus.IncidentID, incident)
 										}
+										containerStatus.ExternalNotified = true
+										now := metav1.Now()
+										containerStatus.ExternalNotifiedTime = &now
 									}
 								} else {
 									err := util.CreateFile(container.Name, pod.Name, actualNamespace)
@@ -597,7 +621,7 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 									if !*containerSpec.SuspendEmailAlert {
 										util.SendEmailAlert(pod.Name, container.Name, containerSpec, fmt.Sprintf("/%s-%s-%s.txt", container.Name, pod.Name, actualNamespace), host)
 									}
-									if *containerSpec.NotifyExtenal && !containerStatus.ExternalNotified {
+									if *containerSpec.NotifyExtenal {
 										err := util.NotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, container.Name, containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
 										if err != nil {
 											log.Log.Info("Failed to notify the external system for pod %s and container %s", pod.Name, container.Name)
@@ -614,6 +638,9 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 										if !slices.Contains(containerStatus.IncidentID, incident) && incident != "" && incident != "[Pending]" {
 											containerStatus.IncidentID = append(containerStatus.IncidentID, incident)
 										}
+										containerStatus.ExternalNotified = true
+										now := metav1.Now()
+										containerStatus.ExternalNotifiedTime = &now
 									}
 								}
 							}
