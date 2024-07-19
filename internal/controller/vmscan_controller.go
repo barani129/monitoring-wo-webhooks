@@ -171,21 +171,23 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	if vmStatus.LastPollTime == nil {
 		log.Log.Info("triggering VMI migration check")
 		for _, ns := range vmSpec.TargetNamespace {
-			migList := kubev1.VirtualMachineInstanceMigrationList{}
-			err := clientset.RESTClient().Get().AbsPath(fmt.Sprintf("/apis/kubevirt.io/v1/namespaces/%s/virtualmachineinstances", ns)).Do(context.Background()).Into(&migList)
+			vmList := kubev1.VirtualMachineInstanceList{}
+			err := clientset.RESTClient().Get().AbsPath(fmt.Sprintf("/apis/kubevirt.io/v1/namespaces/%s/virtualmachineinstances", ns)).Do(context.Background()).Into(&vmList)
 			if err != nil {
 				log.Log.Info("unable to get the Virtual Machine Instance Migrations Lists in target namespace")
 			}
-			for _, mig := range migList.Items {
-				if mig.Status.Phase != "Succeeded" && mig.Spec.VMIName != "" {
-					if !slices.Contains(vmStatus.Migrations, mig.Spec.VMIName+":"+ns) {
-						vmStatus.Migrations = append(vmStatus.Migrations, mig.Spec.VMIName+":"+ns)
-					}
-				} else {
-					if mig.Spec.VMIName != "" {
-						if slices.Contains(vmStatus.Migrations, mig.Spec.VMIName+":"+ns) {
-							idx := slices.Index(vmStatus.Migrations, mig.Spec.VMIName+":"+ns)
-							deleteElementSlice(vmStatus.Migrations, idx)
+			for _, vm := range vmList.Items {
+				if vm.Name != "" {
+					if vm.Status.MigrationState != nil {
+						if !vm.Status.MigrationState.Completed {
+							if !slices.Contains(vmStatus.Migrations, vm.Name+":"+ns) {
+								vmStatus.Migrations = append(vmStatus.Migrations, vm.Name+":"+ns)
+							}
+						} else {
+							if slices.Contains(vmStatus.Migrations, vm.Name+":"+ns) {
+								idx := slices.Index(vmStatus.Migrations, vm.Name+":"+ns)
+								deleteElementSlice(vmStatus.Migrations, idx)
+							}
 						}
 					}
 				}
@@ -234,6 +236,40 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 							vmStatus.IncidentID = append(vmStatus.IncidentID, incident)
 						}
 					}
+				} else {
+					isAffected = false
+					vmStatus.AffectedTargets = nil
+
+					if _, err := os.Stat(fmt.Sprintf("%s-%s-ext.txt", ns, node.Name)); os.IsNotExist(err) {
+						// no action
+					} else {
+						os.Remove(fmt.Sprintf("%s-%s.txt", ns, node.Name))
+						os.Remove(fmt.Sprintf("%s-%s-ext.txt", ns, node.Name))
+						if !*vmSpec.SuspendEmailAlert {
+							vmUtil.SendEmailRecoveredAlert(ns, node.Name, fmt.Sprintf("%s-%s.txt", ns, node.Name), vmSpec, node.Name)
+						}
+						if *vmSpec.NotifyExtenal && vmStatus.ExternalNotified {
+							fingerprint, err := vmUtil.ReadFile(fmt.Sprintf("%s-%s-ext.txt", ns, node.Name))
+							if err != nil {
+								log.Log.Info("Failed to get the incident ID. Couldn't find the fingerprint in the file")
+							}
+							incident, err := vmUtil.SetIncidentID(vmSpec, vmStatus, string(username), string(password), fingerprint)
+							if err != nil || incident == "" {
+								log.Log.Info("Failed to get the incident ID, either incident is getting created or other issues.")
+							}
+							if slices.Contains(vmStatus.IncidentID, incident) {
+								idx := slices.Index(vmStatus.IncidentID, incident)
+								deleteElementSlice(vmStatus.IncidentID, idx)
+							}
+							err = vmUtil.SubNotifyExternalSystem(data, "resolved", ns, node.Name, vmSpec.ExternalURL, string(username), string(password), fmt.Sprintf("%s-%s.txt", ns, node.Name), vmStatus)
+							if err != nil {
+								log.Log.Error(err, "Failed to notify the external system")
+							}
+							now := metav1.Now()
+							vmStatus.ExternalNotifiedTime = &now
+
+						}
+					}
 				}
 			}
 		}
@@ -250,24 +286,25 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		if timeDiff {
 			log.Log.Info("triggering VMI migration check")
 			for _, ns := range vmSpec.TargetNamespace {
-				migList := kubev1.VirtualMachineInstanceMigrationList{}
-				err := clientset.RESTClient().Get().AbsPath(fmt.Sprintf("/apis/kubevirt.io/v1/namespaces/%s/virtualmachineinstances", ns)).Do(context.Background()).Into(&migList)
+				vmList := kubev1.VirtualMachineInstanceList{}
+				err := clientset.RESTClient().Get().AbsPath(fmt.Sprintf("/apis/kubevirt.io/v1/namespaces/%s/virtualmachineinstances", ns)).Do(context.Background()).Into(&vmList)
 				if err != nil {
 					log.Log.Info("unable to get the Virtual Machine Instance Migrations Lists in target namespace")
 				}
-				for _, mig := range migList.Items {
-					if mig.Status.Phase != "Succeeded" {
-						if !slices.Contains(vmStatus.Migrations, mig.Spec.VMIName+":"+ns) {
-							vmStatus.Migrations = append(vmStatus.Migrations, mig.Spec.VMIName+":"+ns)
-						}
-					} else {
-						if mig.Spec.VMIName != "" {
-							if slices.Contains(vmStatus.Migrations, mig.Spec.VMIName+":"+ns) {
-								idx := slices.Index(vmStatus.Migrations, mig.Spec.VMIName+":"+ns)
-								deleteElementSlice(vmStatus.Migrations, idx)
+				for _, vm := range vmList.Items {
+					if vm.Name != "" {
+						if vm.Status.MigrationState != nil {
+							if !vm.Status.MigrationState.Completed {
+								if !slices.Contains(vmStatus.Migrations, vm.Name+":"+ns) {
+									vmStatus.Migrations = append(vmStatus.Migrations, vm.Name+":"+ns)
+								}
+							} else {
+								if slices.Contains(vmStatus.Migrations, vm.Name+":"+ns) {
+									idx := slices.Index(vmStatus.Migrations, vm.Name+":"+ns)
+									deleteElementSlice(vmStatus.Migrations, idx)
+								}
 							}
 						}
-
 					}
 				}
 			}
@@ -295,14 +332,10 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 							vmUtil.SendEmailAlert(ns, node.Name, fmt.Sprintf("%s-%s.txt", ns, node.Name), vmSpec, node.Name)
 						}
 						if *vmSpec.NotifyExtenal && !vmStatus.ExternalNotified {
-
 							err := vmUtil.SubNotifyExternalSystem(data, "firing", ns, node.Name, vmSpec.ExternalURL, string(username), string(password), fmt.Sprintf("%s-%s-ext.txt", ns, node.Name), vmStatus)
 							if err != nil {
 								log.Log.Error(err, "Failed to notify the external system")
 							}
-							now := metav1.Now()
-							vmStatus.ExternalNotifiedTime = &now
-							vmStatus.ExternalNotified = true
 							fingerprint, err := vmUtil.ReadFile(fmt.Sprintf("%s-%s-ext.txt", ns, node.Name))
 							if err != nil {
 								log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
@@ -314,6 +347,9 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 							if !slices.Contains(vmStatus.IncidentID, incident) && incident != "" && incident != "[Pending]" {
 								vmStatus.IncidentID = append(vmStatus.IncidentID, incident)
 							}
+							now := metav1.Now()
+							vmStatus.ExternalNotifiedTime = &now
+							vmStatus.ExternalNotified = true
 						}
 					} else {
 						isAffected = false
@@ -346,7 +382,6 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 								}
 								now := metav1.Now()
 								vmStatus.ExternalNotifiedTime = &now
-
 							}
 						}
 					}

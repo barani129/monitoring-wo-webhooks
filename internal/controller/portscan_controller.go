@@ -180,7 +180,7 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 				if !*clusterSpec.SuspendEmailAlert {
 					clusterUtil.SendEmailAlert(target, fmt.Sprintf("%s-%s.txt", ip[0], ip[1]), clusterSpec, ip[0])
 				}
-				if *clusterSpec.NotifyExtenal && !clusterStatus.ExternalNotified {
+				if *clusterSpec.NotifyExtenal {
 					err := clusterUtil.NotifyExternalSystem(data, "firing", target, clusterSpec.ExternalURL, string(username), string(password), fmt.Sprintf("%s-%s-ext.txt", ip[0], ip[1]), clusterStatus)
 					if err != nil {
 						log.Log.Error(err, "Failed to notify the external system")
@@ -196,8 +196,45 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 					if !slices.Contains(clusterStatus.IncidentID, incident) && incident != "" && incident != "[Pending]" {
 						clusterStatus.IncidentID = append(clusterStatus.IncidentID, incident)
 					}
+					clusterStatus.ExternalNotified = true
+					now := metav1.Now()
+					clusterStatus.ExternalNotifiedTime = &now
 				}
+			} else {
+				if _, err := os.Stat(fmt.Sprintf("%s-%s-ext.txt", ip[0], ip[1])); os.IsNotExist(err) {
+					// no action
+				} else {
+					if slices.Contains(clusterStatus.AffectedTargets, target) {
+						idx := slices.Index(clusterStatus.AffectedTargets, target)
+						deleteElementSlice(clusterStatus.AffectedTargets, idx)
+					}
+					if !*clusterSpec.SuspendEmailAlert {
+						clusterUtil.SendEmailReachableAlert(target, fmt.Sprintf("%s-%s.txt", ip[0], ip[1]), clusterSpec, ip[0])
+					}
+					if *clusterSpec.NotifyExtenal && clusterStatus.ExternalNotified {
+						fingerprint, err := clusterUtil.ReadFile(fmt.Sprintf("%s-%s-ext.txt", ip[0], ip[1]))
+						if err != nil {
+							log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
+						}
+						incident, err := clusterUtil.SetIncidentID(clusterSpec, clusterStatus, string(username), string(password), fingerprint)
+						if err != nil || incident == "" {
+							log.Log.Info("Failed to get the incident ID, either incident is getting created or other issues.")
+						}
+						if slices.Contains(clusterStatus.IncidentID, incident) {
+							idx := slices.Index(clusterStatus.IncidentID, incident)
+							deleteElementSlice(clusterStatus.IncidentID, idx)
+						}
 
+						err = clusterUtil.SubNotifyExternalSystem(data, "resolved", target, clusterSpec.ExternalURL, string(username), string(password), fmt.Sprintf("%s-%s.txt", ip[0], ip[1]), clusterStatus)
+						if err != nil {
+							log.Log.Error(err, "Failed to notify the external system")
+						}
+						now := metav1.Now()
+						clusterStatus.ExternalNotifiedTime = &now
+					}
+					os.Remove(fmt.Sprintf("%s-%s.txt", ip[0], ip[1]))
+					os.Remove(fmt.Sprintf("%s-%s-ext.txt", ip[0], ip[1]))
+				}
 			}
 		}
 
@@ -221,7 +258,10 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 				err := clusterUtil.CheckServerAliveness(target, clusterStatus)
 				if err == nil {
 					if _, err := os.Stat(fmt.Sprintf("%s-%s-ext.txt", ip[0], ip[1])); os.IsNotExist(err) {
-						// no action
+						if slices.Contains(clusterStatus.AffectedTargets, target) {
+							idx := slices.Index(clusterStatus.AffectedTargets, target)
+							deleteElementSlice(clusterStatus.AffectedTargets, idx)
+						}
 					} else {
 						if slices.Contains(clusterStatus.AffectedTargets, target) {
 							idx := slices.Index(clusterStatus.AffectedTargets, target)
@@ -257,14 +297,14 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 					}
 				} else {
 					errorp = append(errorp, ip[0])
-					log.Log.Error(err, fmt.Sprintf("Cluster %s is unreachable.", clusterSpec.Target))
+					log.Log.Error(err, fmt.Sprintf("Target %s is unreachable.", clusterSpec.Target))
 					if !slices.Contains(clusterStatus.AffectedTargets, target) {
 						clusterStatus.AffectedTargets = append(clusterStatus.AffectedTargets, target)
 					}
 					if !*clusterSpec.SuspendEmailAlert {
 						clusterUtil.SendEmailAlert(target, fmt.Sprintf("%s-%s.txt", ip[0], ip[1]), clusterSpec, ip[0])
 					}
-					if *clusterSpec.NotifyExtenal && !clusterStatus.ExternalNotified {
+					if *clusterSpec.NotifyExtenal {
 						err := clusterUtil.SubNotifyExternalSystem(data, "firing", target, clusterSpec.ExternalURL, string(username), string(password), fmt.Sprintf("%s-%s-ext.txt", ip[0], ip[1]), clusterStatus)
 						if err != nil {
 							log.Log.Error(err, "Failed to notify the external system")
@@ -280,6 +320,9 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 						if !slices.Contains(clusterStatus.IncidentID, incident) && incident != "" && incident != "[Pending]" {
 							clusterStatus.IncidentID = append(clusterStatus.IncidentID, incident)
 						}
+						clusterStatus.ExternalNotified = true
+						now := metav1.Now()
+						clusterStatus.ExternalNotifiedTime = &now
 					}
 
 				}
