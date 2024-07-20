@@ -33,6 +33,9 @@ type PortScanSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
+	// Set suspend to true to disable monitoring the custom resource
+	Suspend *bool `json:"suspend"`
+
 	// Target is the Openshift/kubernetes cluster hostname URL or any IP/FQDN with port (example: api.test.com:443 ) (If FQDN is used, it should be resolvable via DNS query)
 	Target []string `json:"target"`
 

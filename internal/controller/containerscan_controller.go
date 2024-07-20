@@ -174,6 +174,9 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, fmt.Errorf("unable to retrieve in cluster configuration due to %s", err)
 	}
 	defaultHealthCheckInterval := time.Minute * time.Duration(*containerSpec.CheckInterval)
+	if containerSpec.Suspend != nil && *containerSpec.Suspend {
+		return ctrl.Result{}, nil
+	}
 	if containerStatus.LastRunTime == nil {
 		var afcontainers []string
 		var afpods []string
@@ -194,10 +197,10 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 							deleteElementSlice(containerStatus.AffectedPods, idx)
 						}
 						if *containerSpec.AggregateAlerts {
-							os.Remove(fmt.Sprintf("/%s-%s-%s-ext.txt", "pod", po[0], actualNamespace))
-							os.Remove(fmt.Sprintf("/%s-%s-%s.txt", "pod", po[0], actualNamespace))
+							os.Remove(fmt.Sprintf("/home/golanguser%s-%s-%s-ext.txt", "pod", po[0], actualNamespace))
+							os.Remove(fmt.Sprintf("/home/golanguser%s-%s-%s.txt", "pod", po[0], actualNamespace))
 						} else {
-							files, err := os.ReadDir("/")
+							files, err := os.ReadDir("/home/golanguser")
 							if err != nil {
 								log.Log.Info("Unable to read the directory /")
 							}
@@ -233,14 +236,14 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 								}
 								afpods = append(afpods, container.Name)
 								if !*containerSpec.SuspendEmailAlert {
-									util.SendEmailAlert(pod.Name, "cont", containerSpec, fmt.Sprintf("/%s-%s-%s.txt", "pod", pod.Name, actualNamespace), host)
+									util.SendEmailAlert(pod.Name, "cont", containerSpec, fmt.Sprintf("/home/golanguser%s-%s-%s.txt", "pod", pod.Name, actualNamespace), host)
 								}
 								if *containerSpec.NotifyExtenal {
-									err := util.NotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, "cont", containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", "pod", pod.Name, actualNamespace))
+									err := util.NotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, "cont", containerStatus, fmt.Sprintf("/home/golanguser%s-%s-%s-ext.txt", "pod", pod.Name, actualNamespace))
 									if err != nil {
 										log.Log.Info("Failed to notify the external system for pod %s", pod.Name)
 									}
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/%s-%s-ext.txt", "pod", pod.Name))
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser%s-%s-ext.txt", "pod", pod.Name))
 									if err != nil {
 										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 									}
@@ -266,14 +269,14 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 								}
 								afcontainers = append(afcontainers, container.Name)
 								if !*containerSpec.SuspendEmailAlert {
-									util.SendEmailAlert(pod.Name, container.Name, containerSpec, fmt.Sprintf("/%s-%s-%s.txt", container.Name, pod.Name, actualNamespace), host)
+									util.SendEmailAlert(pod.Name, container.Name, containerSpec, fmt.Sprintf("/home/golanguser%s-%s-%s.txt", container.Name, pod.Name, actualNamespace), host)
 								}
 								if *containerSpec.NotifyExtenal {
-									err := util.NotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, container.Name, containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
+									err := util.NotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, container.Name, containerStatus, fmt.Sprintf("/home/golanguser%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
 									if err != nil {
 										log.Log.Info("Failed to notify the external system for pod %s and container %s", pod.Name, container.Name)
 									}
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
 									fmt.Println(fingerprint)
 									if err != nil {
 										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
@@ -308,14 +311,14 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 								}
 								afpods = append(afpods, container.Name)
 								if !*containerSpec.SuspendEmailAlert {
-									util.SendEmailAlert(pod.Name, "cont", containerSpec, fmt.Sprintf("/%s-%s-%s.txt", "pod", pod.Name, actualNamespace), host)
+									util.SendEmailAlert(pod.Name, "cont", containerSpec, fmt.Sprintf("/home/golanguser%s-%s-%s.txt", "pod", pod.Name, actualNamespace), host)
 								}
 								if *containerSpec.NotifyExtenal {
-									err := util.NotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, "cont", containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", "pod", pod.Name, actualNamespace))
+									err := util.NotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, "cont", containerStatus, fmt.Sprintf("/home/golanguser%s-%s-%s-ext.txt", "pod", pod.Name, actualNamespace))
 									if err != nil {
 										log.Log.Info("Failed to notify the external system for pod %s", pod.Name)
 									}
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/%s-%s-ext.txt", "pod", pod.Name))
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser%s-%s-ext.txt", "pod", pod.Name))
 									if err != nil {
 										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 									}
@@ -341,14 +344,14 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 								}
 								afcontainers = append(afcontainers, container.Name)
 								if !*containerSpec.SuspendEmailAlert {
-									util.SendEmailAlert(pod.Name, container.Name, containerSpec, fmt.Sprintf("/%s-%s-%s.txt", container.Name, pod.Name, actualNamespace), host)
+									util.SendEmailAlert(pod.Name, container.Name, containerSpec, fmt.Sprintf("/home/golanguser%s-%s-%s.txt", container.Name, pod.Name, actualNamespace), host)
 								}
 								if *containerSpec.NotifyExtenal {
-									err := util.NotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, container.Name, containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
+									err := util.NotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, container.Name, containerStatus, fmt.Sprintf("/home/golanguser%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
 									if err != nil {
 										log.Log.Info("Failed to notify the external system for pod %s and container %s", pod.Name, container.Name)
 									}
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
 									fmt.Println(fingerprint)
 									if err != nil {
 										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
@@ -422,10 +425,10 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 								deleteElementSlice(containerStatus.AffectedPods, idx)
 							}
 							if *containerSpec.AggregateAlerts {
-								os.Remove(fmt.Sprintf("/%s-%s-%s-ext.txt", "pod", po[0], actualNamespace))
-								os.Remove(fmt.Sprintf("/%s-%s-%s.txt", "pod", po[0], actualNamespace))
+								os.Remove(fmt.Sprintf("/home/golanguser%s-%s-%s-ext.txt", "pod", po[0], actualNamespace))
+								os.Remove(fmt.Sprintf("/home/golanguser%s-%s-%s.txt", "pod", po[0], actualNamespace))
 							} else {
-								files, err := os.ReadDir("/")
+								files, err := os.ReadDir("/home/golanguser")
 								if err != nil {
 									log.Log.Info("Unable to read the directory /")
 								}
@@ -462,14 +465,14 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 									}
 									affpods = append(affpods, pod.Name)
 									if !*containerSpec.SuspendEmailAlert {
-										util.SendEmailAlert(pod.Name, "cont", containerSpec, fmt.Sprintf("/%s-%s.txt", "pod", pod.Name), host)
+										util.SendEmailAlert(pod.Name, "cont", containerSpec, fmt.Sprintf("/home/golanguser%s-%s.txt", "pod", pod.Name), host)
 									}
 									if *containerSpec.NotifyExtenal {
-										err := util.SubNotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, "cont", containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", "pod", pod.Name, actualNamespace))
+										err := util.SubNotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, "cont", containerStatus, fmt.Sprintf("/home/golanguser%s-%s-%s-ext.txt", "pod", pod.Name, actualNamespace))
 										if err != nil {
 											log.Log.Info("Failed to notify the external system for pod %s", pod.Name)
 										}
-										fingerprint, err := util.ReadFile(fmt.Sprintf("/%s-%s-ext.txt", "pod", pod.Name))
+										fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser%s-%s-ext.txt", "pod", pod.Name))
 										if err != nil {
 											log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 										}
@@ -487,14 +490,14 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 								} else {
 									affcontainers = append(affcontainers, container.Name)
 									if !*containerSpec.SuspendEmailAlert {
-										util.SendEmailAlert(pod.Name, container.Name, containerSpec, fmt.Sprintf("/%s-%s.txt", container.Name, pod.Name), host)
+										util.SendEmailAlert(pod.Name, container.Name, containerSpec, fmt.Sprintf("/home/golanguser%s-%s.txt", container.Name, pod.Name), host)
 									}
 									if *containerSpec.NotifyExtenal {
-										err := util.SubNotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, container.Name, containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
+										err := util.SubNotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, container.Name, containerStatus, fmt.Sprintf("/home/golanguser%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
 										if err != nil {
 											log.Log.Info("Failed to notify the external system for pod %s and container %s", pod.Name, container.Name)
 										}
-										fingerprint, err := util.ReadFile(fmt.Sprintf("/%s-%s-ext.txt", container.Name, pod.Name))
+										fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser%s-%s-ext.txt", container.Name, pod.Name))
 										if err != nil {
 											log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 										}
@@ -518,10 +521,10 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 								}
 								if *containerSpec.AggregateAlerts {
 									if !*containerSpec.SuspendEmailAlert {
-										util.SendEmailRecoverAlert(pod.Name, "cont", containerSpec, fmt.Sprintf("/%s-%s.txt", container.Name, pod.Name), host)
+										util.SendEmailRecoverAlert(pod.Name, "cont", containerSpec, fmt.Sprintf("/home/golanguser%s-%s.txt", container.Name, pod.Name), host)
 									}
 									if *containerSpec.NotifyExtenal && containerStatus.ExternalNotified {
-										fingerprint, err := util.ReadFile(fmt.Sprintf("/%s-%s-ext.txt", "pod", pod.Name))
+										fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser%s-%s-ext.txt", "pod", pod.Name))
 										if err != nil {
 											log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 										}
@@ -533,7 +536,7 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 											idx := slices.Index(containerStatus.IncidentID, incident)
 											deleteElementSlice(containerStatus.IncidentID, idx)
 										}
-										err = util.SubNotifyExternalSystem(data, "resolved", containerSpec.ExternalURL, username, password, pod.Name, container.Name, containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
+										err = util.SubNotifyExternalSystem(data, "resolved", containerSpec.ExternalURL, username, password, pod.Name, container.Name, containerStatus, fmt.Sprintf("/home/golanguser%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
 										if err != nil {
 											log.Log.Info("Failed to notify the external system for pod %s", pod.Name)
 										}
@@ -543,10 +546,10 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 									}
 								} else {
 									if !*containerSpec.SuspendEmailAlert {
-										util.SendEmailRecoverAlert(pod.Name, container.Name, containerSpec, fmt.Sprintf("/%s-%s.txt", container.Name, pod.Name), host)
+										util.SendEmailRecoverAlert(pod.Name, container.Name, containerSpec, fmt.Sprintf("/home/golanguser%s-%s.txt", container.Name, pod.Name), host)
 									}
 									if *containerSpec.NotifyExtenal && containerStatus.ExternalNotified {
-										fingerprint, err := util.ReadFile(fmt.Sprintf("/%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
+										fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
 										if err != nil {
 											log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 										}
@@ -558,7 +561,7 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 											idx := slices.Index(containerStatus.IncidentID, incident)
 											deleteElementSlice(containerStatus.IncidentID, idx)
 										}
-										err = util.SubNotifyExternalSystem(data, "resolved", containerSpec.ExternalURL, username, password, pod.Name, container.Name, containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
+										err = util.SubNotifyExternalSystem(data, "resolved", containerSpec.ExternalURL, username, password, pod.Name, container.Name, containerStatus, fmt.Sprintf("/home/golanguser%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
 										if err != nil {
 											log.Log.Info("Failed to notify the external system for pod %s and container %s", pod.Name, container.Name)
 										}
@@ -586,14 +589,14 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 									}
 									affpods = append(affpods, container.Name)
 									if !*containerSpec.SuspendEmailAlert {
-										util.SendEmailAlert(pod.Name, "cont", containerSpec, fmt.Sprintf("/%s-%s-%s.txt", "pod", pod.Name, actualNamespace), host)
+										util.SendEmailAlert(pod.Name, "cont", containerSpec, fmt.Sprintf("/home/golanguser%s-%s-%s.txt", "pod", pod.Name, actualNamespace), host)
 									}
 									if *containerSpec.NotifyExtenal {
-										err := util.NotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, "cont", containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", "pod", pod.Name, actualNamespace))
+										err := util.NotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, "cont", containerStatus, fmt.Sprintf("/home/golanguser%s-%s-%s-ext.txt", "pod", pod.Name, actualNamespace))
 										if err != nil {
 											log.Log.Info("Failed to notify the external system for pod %s", pod.Name)
 										}
-										fingerprint, err := util.ReadFile(fmt.Sprintf("/%s-%s-ext.txt", "pod", pod.Name))
+										fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser%s-%s-ext.txt", "pod", pod.Name))
 										if err != nil {
 											log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 										}
@@ -619,14 +622,14 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 									}
 									affcontainers = append(affcontainers, container.Name)
 									if !*containerSpec.SuspendEmailAlert {
-										util.SendEmailAlert(pod.Name, container.Name, containerSpec, fmt.Sprintf("/%s-%s-%s.txt", container.Name, pod.Name, actualNamespace), host)
+										util.SendEmailAlert(pod.Name, container.Name, containerSpec, fmt.Sprintf("/home/golanguser%s-%s-%s.txt", container.Name, pod.Name, actualNamespace), host)
 									}
 									if *containerSpec.NotifyExtenal {
-										err := util.NotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, container.Name, containerStatus, fmt.Sprintf("/%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
+										err := util.NotifyExternalSystem(data, "firing", containerSpec.ExternalURL, username, password, pod.Name, container.Name, containerStatus, fmt.Sprintf("/home/golanguser%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
 										if err != nil {
 											log.Log.Info("Failed to notify the external system for pod %s and container %s", pod.Name, container.Name)
 										}
-										fingerprint, err := util.ReadFile(fmt.Sprintf("/%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
+										fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
 										fmt.Println(fingerprint)
 										if err != nil {
 											log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
@@ -698,11 +701,11 @@ func remoteFiles(clientset kubernetes.Clientset, namespace string, spec *monitor
 	for _, pod := range pods.Items {
 		for _, container := range pod.Spec.Containers {
 			if *spec.AggregateAlerts {
-				os.Remove(fmt.Sprintf("/%s-%s-%s-ext.txt", "pod", pod.Name, namespace))
-				os.Remove(fmt.Sprintf("/%s-%s-%s.txt", "pod", pod.Name, namespace))
+				os.Remove(fmt.Sprintf("/home/golanguser%s-%s-%s-ext.txt", "pod", pod.Name, namespace))
+				os.Remove(fmt.Sprintf("/home/golanguser%s-%s-%s.txt", "pod", pod.Name, namespace))
 			} else {
-				os.Remove(fmt.Sprintf("/%s-%s-%s-ext.txt", container.Name, pod.Name, namespace))
-				os.Remove(fmt.Sprintf("/%s-%s-%s.txt", container.Name, pod.Name, namespace))
+				os.Remove(fmt.Sprintf("/home/golanguser%s-%s-%s-ext.txt", container.Name, pod.Name, namespace))
+				os.Remove(fmt.Sprintf("/home/golanguser%s-%s-%s.txt", container.Name, pod.Name, namespace))
 			}
 
 		}
