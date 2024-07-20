@@ -4,7 +4,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.14.0
-    # cert-manager.io/inject-ca-from: shift-stack/webhook-server-secret
   name: portscans.monitoring.spark.co.nz
 spec:
   group: monitoring.spark.co.nz
@@ -14,16 +13,6 @@ spec:
     plural: portscans
     singular: portscan
   scope: Cluster
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        service:
-          namespace: system
-          name: webhook-service
-          path: /convert
-      conversionReviewVersions:
-      - v1
   versions:
   - additionalPrinterColumns:
     - description: object creation timestamp(in cluster's timezone)
@@ -97,6 +86,10 @@ spec:
               relayHost:
                 description: Relay host for sending the email
                 type: string
+              suspend:
+                description: Set suspend to true to disable monitoring the custom
+                  resource
+                type: boolean
               suspendEmail:
                 description: Suspends email alerts if set to true, target users will
                   not be notified
@@ -109,6 +102,7 @@ spec:
                   type: string
                 type: array
             required:
+            - suspend
             - target
             type: object
           status:

@@ -322,7 +322,7 @@ func basicAuth(username, password string) string {
 }
 
 func CreateFile(container string, pod string, namespace string) error {
-	_, err := os.OpenFile(fmt.Sprintf("/%s-%s-%s.txt", container, pod, namespace), os.O_RDONLY|os.O_CREATE, 0666)
+	_, err := os.OpenFile(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", container, pod, namespace), os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {
 		return err
 	}
@@ -330,7 +330,7 @@ func CreateFile(container string, pod string, namespace string) error {
 }
 
 func CreateExtFile(container string, pod string, namespace string) error {
-	_, err := os.OpenFile(fmt.Sprintf("/%s-%s-%s-ext.txt", container, pod, namespace), os.O_RDONLY|os.O_CREATE, 0666)
+	_, err := os.OpenFile(fmt.Sprintf("/home/golanguser/%s-%s-%s-ext.txt", container, pod, namespace), os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {
 		return err
 	}

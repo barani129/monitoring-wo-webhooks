@@ -33,6 +33,9 @@ type VmScanSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// ImVmant: Run "make" to regenerate code after modifying this file
 
+	// Set suspend to true to disable monitoring the custom resource
+	Suspend *bool `json:"suspend"`
+
 	// target namespace to check for vmi
 	TargetNamespace []string `json:"targetNamespace"`
 
