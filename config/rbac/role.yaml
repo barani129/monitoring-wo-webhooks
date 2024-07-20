@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: manager-role
+  name: spark-monitoring-role
 rules:
 - apiGroups:
   - ""
@@ -23,6 +23,14 @@ rules:
   - ""
   resources:
   - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - kubevirt.io/v1
+  resources:
+  - virtualmachineinstances
   verbs:
   - get
   - list

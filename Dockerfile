@@ -1,23 +1,29 @@
 # Build the manager binary
-FROM golang:1.21 AS builder
+FROM golang:latest AS builder
 ARG TARGETOS
 ARG TARGETARCH
 
-WORKDIR /workspace
+# Create non-root user
+RUN groupadd golanguser
+RUN useradd -ms /bin/bash golanguser -g golanguser
+USER golanguser
+WORKDIR /home/golanguser
+
+WORKDIR /home/golanguser
 # Copy the Go Modules manifests
-COPY go.mod go.mod
-COPY go.sum go.sum
+COPY --chown=golanguser:golanguser go.mod go.mod
+COPY --chown=golanguser:golanguser go.sum go.sum
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
 RUN go mod download
 
 # Copy the go source
-COPY cmd/main.go cmd/main.go
-COPY api/ api/
-COPY internal/controller/ internal/controller/
-COPY internal/containerscan/ internal/containerscan/
-COPY internal/portscan/ internal/portscan/
-COPY internal/vmscan/ internal/vmscan/
+COPY --chown=golanguser:golanguser cmd/main.go cmd/main.go
+COPY --chown=golanguser:golanguser api/ api/
+COPY --chown=golanguser:golanguser internal/controller/ internal/controller/
+COPY --chown=golanguser:golanguser internal/containerscan/ internal/containerscan/
+COPY --chown=golanguser:golanguser internal/portscan/ internal/portscan/
+COPY --chown=golanguser:golanguser internal/vmscan/ internal/vmscan/
 
 # Build
 # the GOARCH has not a default value to allow the binary be built according to the host where the command
@@ -31,8 +37,13 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o ma
 FROM alpine:latest
 RUN apk add --no-cache bash
 RUN apk add --no-cache mailx
-WORKDIR /
-COPY --from=builder /workspace/manager .
-#USER 65532:65532
 
-ENTRYPOINT ["/manager"]
+# Create non-root user 
+RUN addgroup golanguser
+RUN addgroup -S golanggroup && adduser -S golanguser -G golanguser
+USER golanguser:golanguser
+WORKDIR /home/golanguser
+COPY --from=builder /home/golanguser/manager .
+#USER golanguser:golanguser
+
+ENTRYPOINT ["/home/golanguser/manager"]
