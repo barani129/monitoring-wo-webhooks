@@ -165,6 +165,7 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 	// extFile := fmt.Sprintf("/%s-external.txt", clusterSpec.Target)
 	defaultHealthCheckIntervalPort := time.Minute * time.Duration(*clusterSpec.CheckInterval)
 	if clusterSpec.Suspend != nil && *clusterSpec.Suspend {
+		log.Log.Info("port scan is suspended, skipping..")
 		return ctrl.Result{}, nil
 	}
 	if clusterStatus.LastPollTime == nil {
