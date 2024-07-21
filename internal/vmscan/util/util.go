@@ -345,7 +345,7 @@ func basicAuth(username, password string) string {
 }
 
 func writeFile(filename string, data string) error {
-	err := os.WriteFile(filename, []byte(data), 0644)
+	err := os.WriteFile(filename, []byte(data), 0666)
 	if err != nil {
 		return err
 	}
