@@ -116,7 +116,7 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	var username []byte
 	var password []byte
 	var data map[string]string
-	if *vmSpec.NotifyExtenal {
+	if vmSpec.NotifyExtenal != nil && *vmSpec.NotifyExtenal {
 		if err := r.Get(ctx, secretName, &secret); err != nil {
 			return ctrl.Result{}, fmt.Errorf("%w, secret name: %s, reason: %v", errGetAuthSecret, secretName, err)
 		}
@@ -124,7 +124,7 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		password = secret.Data["password"]
 	}
 
-	if *vmSpec.NotifyExtenal {
+	if vmSpec.NotifyExtenal != nil && *vmSpec.NotifyExtenal {
 		if err := r.Get(ctx, configmapName, &configmap); err != nil {
 			return ctrl.Result{}, fmt.Errorf("%w, configmap name: %s, reason: %v", errGetAuthConfigMap, configmapName, err)
 		}
@@ -167,7 +167,12 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		return ctrl.Result{}, err
 	}
 	vmiNodes := make(map[string][]string)
-	defaultHealthCheckIntervalVm := time.Minute * time.Duration(*vmSpec.CheckInterval)
+	var defaultHealthCheckIntervalVm time.Duration
+	if vmSpec.CheckInterval != nil {
+		defaultHealthCheckIntervalVm = time.Minute * time.Duration(*vmSpec.CheckInterval)
+	} else {
+		defaultHealthCheckIntervalVm = time.Minute * 30
+	}
 	if vmSpec.Suspend != nil && *vmSpec.Suspend {
 		log.Log.Info("vm scan is suspended, skipping..")
 		return ctrl.Result{}, nil
@@ -217,10 +222,10 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 							vmStatus.AffectedTargets = append(vmStatus.AffectedTargets, node.Name+":ns:"+vmi)
 						}
 					}
-					if !*vmSpec.SuspendEmailAlert {
+					if vmSpec.SuspendEmailAlert != nil && !*vmSpec.SuspendEmailAlert {
 						vmUtil.SendEmailAlert(ns, node.Name, fmt.Sprintf("/home/golanguser/%s-%s.txt", ns, node.Name), vmSpec, node.Name)
 					}
-					if *vmSpec.NotifyExtenal && !vmStatus.ExternalNotified {
+					if vmSpec.NotifyExtenal != nil && *vmSpec.NotifyExtenal && !vmStatus.ExternalNotified {
 						err := vmUtil.NotifyExternalSystem(data, "firing", ns, node.Name, vmSpec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-ext.txt", ns, node.Name), vmStatus)
 						if err != nil {
 							log.Log.Error(err, "Failed to notify the external system")
@@ -249,10 +254,10 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 					} else {
 						os.Remove(fmt.Sprintf("/home/golanguser/%s-%s.txt", ns, node.Name))
 						os.Remove(fmt.Sprintf("/home/golanguser/%s-%s-ext.txt", ns, node.Name))
-						if !*vmSpec.SuspendEmailAlert {
+						if vmSpec.SuspendEmailAlert != nil && !*vmSpec.SuspendEmailAlert {
 							vmUtil.SendEmailRecoveredAlert(ns, node.Name, fmt.Sprintf("/home/golanguser/%s-%s.txt", ns, node.Name), vmSpec, node.Name)
 						}
-						if *vmSpec.NotifyExtenal && vmStatus.ExternalNotified {
+						if vmSpec.NotifyExtenal != nil && *vmSpec.NotifyExtenal && vmStatus.ExternalNotified {
 							fingerprint, err := vmUtil.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-ext.txt", ns, node.Name))
 							if err != nil {
 								log.Log.Info("Failed to get the incident ID. Couldn't find the fingerprint in the file")
@@ -332,10 +337,10 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 								vmStatus.AffectedTargets = append(vmStatus.AffectedTargets, node.Name+":ns:"+vmi)
 							}
 						}
-						if !*vmSpec.SuspendEmailAlert {
+						if vmSpec.SuspendEmailAlert != nil && !*vmSpec.SuspendEmailAlert {
 							vmUtil.SendEmailAlert(ns, node.Name, fmt.Sprintf("/home/golanguser/%s-%s.txt", ns, node.Name), vmSpec, node.Name)
 						}
-						if *vmSpec.NotifyExtenal && !vmStatus.ExternalNotified {
+						if vmSpec.NotifyExtenal != nil && *vmSpec.NotifyExtenal && !vmStatus.ExternalNotified {
 							err := vmUtil.SubNotifyExternalSystem(data, "firing", ns, node.Name, vmSpec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-ext.txt", ns, node.Name), vmStatus)
 							if err != nil {
 								log.Log.Error(err, "Failed to notify the external system")
@@ -364,10 +369,10 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 						} else {
 							os.Remove(fmt.Sprintf("/home/golanguser/%s-%s.txt", ns, node.Name))
 							os.Remove(fmt.Sprintf("/home/golanguser/%s-%s-ext.txt", ns, node.Name))
-							if !*vmSpec.SuspendEmailAlert {
+							if vmSpec.SuspendEmailAlert != nil && !*vmSpec.SuspendEmailAlert {
 								vmUtil.SendEmailRecoveredAlert(ns, node.Name, fmt.Sprintf("/home/golanguser/%s-%s.txt", ns, node.Name), vmSpec, node.Name)
 							}
-							if *vmSpec.NotifyExtenal && vmStatus.ExternalNotified {
+							if vmSpec.NotifyExtenal != nil && *vmSpec.NotifyExtenal && vmStatus.ExternalNotified {
 								fingerprint, err := vmUtil.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-ext.txt", ns, node.Name))
 								if err != nil {
 									log.Log.Info("Failed to get the incident ID. Couldn't find the fingerprint in the file")

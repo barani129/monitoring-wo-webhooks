@@ -324,7 +324,6 @@ func basicAuth(username, password string) string {
 func SendEmailAlert(target string, filename string, spec *v1alpha1.PortScanSpec, host string) {
 	targets := strings.SplitN(target, ":", 2)
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
-
 		message := fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: Port unreachability alert from %s" "target %s is unreachable on port %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", host, targets[0], targets[1], spec.Email, spec.RelayHost, spec.Email)
 		cmd3 := exec.Command("/bin/bash", "-c", message)
 		err := cmd3.Run()

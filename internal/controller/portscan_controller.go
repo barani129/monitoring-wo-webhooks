@@ -163,7 +163,12 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 	}
 	// filename := fmt.Sprintf("/%s.txt", clusterSpec.Target)
 	// extFile := fmt.Sprintf("/%s-external.txt", clusterSpec.Target)
-	defaultHealthCheckIntervalPort := time.Minute * time.Duration(*clusterSpec.CheckInterval)
+	var defaultHealthCheckIntervalPort time.Duration
+	if clusterSpec.CheckInterval != nil {
+		defaultHealthCheckIntervalPort = time.Minute * time.Duration(*clusterSpec.CheckInterval)
+	} else {
+		defaultHealthCheckIntervalPort = time.Minute * 30
+	}
 	if clusterSpec.Suspend != nil && *clusterSpec.Suspend {
 		log.Log.Info("port scan is suspended, skipping..")
 		return ctrl.Result{}, nil
@@ -180,10 +185,10 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 				if !slices.Contains(clusterStatus.AffectedTargets, target) {
 					clusterStatus.AffectedTargets = append(clusterStatus.AffectedTargets, target)
 				}
-				if !*clusterSpec.SuspendEmailAlert {
+				if clusterSpec.SuspendEmailAlert != nil && !*clusterSpec.SuspendEmailAlert {
 					clusterUtil.SendEmailAlert(target, fmt.Sprintf("/home/golanguser/%s-%s.txt", ip[0], ip[1]), clusterSpec, ip[0])
 				}
-				if *clusterSpec.NotifyExtenal {
+				if clusterSpec.NotifyExtenal != nil && *clusterSpec.NotifyExtenal {
 					err := clusterUtil.NotifyExternalSystem(data, "firing", target, clusterSpec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-ext.txt", ip[0], ip[1]), clusterStatus)
 					if err != nil {
 						log.Log.Error(err, "Failed to notify the external system")
@@ -214,7 +219,7 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 					if !*clusterSpec.SuspendEmailAlert {
 						clusterUtil.SendEmailReachableAlert(target, fmt.Sprintf("/home/golanguser/%s-%s.txt", ip[0], ip[1]), clusterSpec, ip[0])
 					}
-					if *clusterSpec.NotifyExtenal && clusterStatus.ExternalNotified {
+					if clusterSpec.NotifyExtenal != nil && *clusterSpec.NotifyExtenal && clusterStatus.ExternalNotified {
 						fingerprint, err := clusterUtil.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-ext.txt", ip[0], ip[1]))
 						if err != nil {
 							log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
@@ -270,10 +275,10 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 							idx := slices.Index(clusterStatus.AffectedTargets, target)
 							deleteElementSlice(clusterStatus.AffectedTargets, idx)
 						}
-						if !*clusterSpec.SuspendEmailAlert {
+						if clusterSpec.SuspendEmailAlert != nil && !*clusterSpec.SuspendEmailAlert {
 							clusterUtil.SendEmailReachableAlert(target, fmt.Sprintf("/home/golanguser/%s-%s.txt", ip[0], ip[1]), clusterSpec, ip[0])
 						}
-						if *clusterSpec.NotifyExtenal && clusterStatus.ExternalNotified {
+						if clusterSpec.NotifyExtenal != nil && *clusterSpec.NotifyExtenal && clusterStatus.ExternalNotified {
 							fingerprint, err := clusterUtil.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-ext.txt", ip[0], ip[1]))
 							if err != nil {
 								log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
@@ -304,10 +309,10 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 					if !slices.Contains(clusterStatus.AffectedTargets, target) {
 						clusterStatus.AffectedTargets = append(clusterStatus.AffectedTargets, target)
 					}
-					if !*clusterSpec.SuspendEmailAlert {
+					if clusterSpec.SuspendEmailAlert != nil && !*clusterSpec.SuspendEmailAlert {
 						clusterUtil.SendEmailAlert(target, fmt.Sprintf("/home/golanguser/%s-%s.txt", ip[0], ip[1]), clusterSpec, ip[0])
 					}
-					if *clusterSpec.NotifyExtenal {
+					if clusterSpec.NotifyExtenal != nil && *clusterSpec.NotifyExtenal {
 						err := clusterUtil.SubNotifyExternalSystem(data, "firing", target, clusterSpec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-ext.txt", ip[0], ip[1]), clusterStatus)
 						if err != nil {
 							log.Log.Error(err, "Failed to notify the external system")
