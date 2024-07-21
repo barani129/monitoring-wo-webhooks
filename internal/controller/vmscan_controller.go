@@ -169,6 +169,7 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	vmiNodes := make(map[string][]string)
 	defaultHealthCheckIntervalVm := time.Minute * time.Duration(*vmSpec.CheckInterval)
 	if vmSpec.Suspend != nil && *vmSpec.Suspend {
+		log.Log.Info("vm scan is suspended, skipping..")
 		return ctrl.Result{}, nil
 	}
 	if vmStatus.LastPollTime == nil {
