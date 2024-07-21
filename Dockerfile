@@ -34,16 +34,17 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o ma
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM alpine:latest
+FROM alpine:latest as alpine
 RUN apk add --no-cache bash
 RUN apk add --no-cache mailx
 
 # Create non-root user 
-RUN addgroup golanguser
-RUN addgroup -S golanggroup && adduser -S golanguser -G golanguser
-USER golanguser:golanguser
+RUN addgroup -g 65532 golanguser
+RUN addgroup -S golanggroup && adduser -S golanguser -u 65532 -G golanguser
+RUN chmod 777 /home/golanguser
 WORKDIR /home/golanguser
 COPY --from=builder /home/golanguser/manager .
-#USER golanguser:golanguser
+USER 65532:65532
+
 
 ENTRYPOINT ["/home/golanguser/manager"]

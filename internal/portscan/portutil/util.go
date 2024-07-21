@@ -366,7 +366,7 @@ func SendEmailReachableAlert(target string, filename string, spec *v1alpha1.Port
 }
 
 func writeFile(filename string, data string) error {
-	err := os.WriteFile(filename, []byte(data), 0644)
+	err := os.WriteFile(filename, []byte(data), 0666)
 	if err != nil {
 		return err
 	}
