@@ -244,6 +244,7 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 						if !slices.Contains(vmStatus.IncidentID, incident) && incident != "" && incident != "[Pending]" {
 							vmStatus.IncidentID = append(vmStatus.IncidentID, incident)
 						}
+
 					}
 				} else {
 					isAffected = false
@@ -252,8 +253,7 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 					if _, err := os.Stat(fmt.Sprintf("/home/golanguser/%s-%s-ext.txt", ns, node.Name)); os.IsNotExist(err) {
 						// no action
 					} else {
-						os.Remove(fmt.Sprintf("/home/golanguser/%s-%s.txt", ns, node.Name))
-						os.Remove(fmt.Sprintf("/home/golanguser/%s-%s-ext.txt", ns, node.Name))
+
 						if vmSpec.SuspendEmailAlert != nil && !*vmSpec.SuspendEmailAlert {
 							vmUtil.SendEmailRecoveredAlert(ns, node.Name, fmt.Sprintf("/home/golanguser/%s-%s.txt", ns, node.Name), vmSpec, node.Name)
 						}
@@ -276,7 +276,8 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 							}
 							now := metav1.Now()
 							vmStatus.ExternalNotifiedTime = &now
-
+							os.Remove(fmt.Sprintf("/home/golanguser/%s-%s.txt", ns, node.Name))
+							os.Remove(fmt.Sprintf("/home/golanguser/%s-%s-ext.txt", ns, node.Name))
 						}
 					}
 				}
@@ -367,8 +368,6 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 						if _, err := os.Stat(fmt.Sprintf("/home/golanguser/%s-%s-ext.txt", ns, node.Name)); os.IsNotExist(err) {
 							// no action
 						} else {
-							os.Remove(fmt.Sprintf("/home/golanguser/%s-%s.txt", ns, node.Name))
-							os.Remove(fmt.Sprintf("/home/golanguser/%s-%s-ext.txt", ns, node.Name))
 							if vmSpec.SuspendEmailAlert != nil && !*vmSpec.SuspendEmailAlert {
 								vmUtil.SendEmailRecoveredAlert(ns, node.Name, fmt.Sprintf("/home/golanguser/%s-%s.txt", ns, node.Name), vmSpec, node.Name)
 							}
@@ -391,6 +390,8 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 								}
 								now := metav1.Now()
 								vmStatus.ExternalNotifiedTime = &now
+								os.Remove(fmt.Sprintf("/home/golanguser/%s-%s.txt", ns, node.Name))
+								os.Remove(fmt.Sprintf("/home/golanguser/%s-%s-ext.txt", ns, node.Name))
 							}
 						}
 					}

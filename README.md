@@ -8,7 +8,36 @@ After the CRD installation, please execute the following command to under each f
 ```sh
 kubectl/oc explain containerscan.monitoring.spark.co.nz
 kubectl/oc explain portscan.monitoring.spark.co.nz
+kubectl/oc explain vmscan.monitoring.spark.co.nz
 ```
+vmscan CRD is for reporting if more than one VM is running on the same host, this may not be much useful to others, but installing the CRD is required to avoid errors in the controller deployment logs.
+
+## Deployment
+Sample deployment
+1. Create the CRDs
+```sh
+oc create -f monitoring-wo-webhooks/config/crd/bases/monitoring.spark.co.nz_containerscans.yaml
+oc create -f monitoring-wo-webhooks/config/crd/bases/monitoring.spark.co.nz_portscans.yaml
+oc create -f monitoring-wo-webhooks/config/crd/bases/monitoring.spark.co.nz_vmscans.yaml
+```
+2. Create the service account
+```sh
+oc project <yourproject>
+oc create sa <sa>
+```
+3. Create roles/rolebindings for service account
+Modify service account name in role_binding.yaml
+```sh
+oc create -f monitoring-wo-webhooks/config/rbac/role.yaml
+oc create -f monitoring-wo-webhooks/config/rbac/role_binding.yaml
+```
+4. Create the deployment of the controller
+update the created service account and image name in the deployment file
+```sh
+oc create deployment -f <deployment.yaml>
+```
+5. To run as non-root user
+update security context, runAsUser and runAsGroup if required.
 
 ## Getting Started
 

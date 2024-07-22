@@ -174,7 +174,7 @@ func SendEmailRecoveredAlert(ns string, nodeName string, filename string, spec *
 		fmt.Printf("Failed to send the alert: %s", err)
 	}
 	if data == "sent" {
-		message := fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: VM placement alert from %s" "Previously VMIs placement violation is now resolve in target namespace %s target node %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", host, ns, nodeName, spec.Email, spec.RelayHost, spec.Email)
+		message := fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: VM placement alert from %s" "Previously VMIs placement violation is now resolved in target namespace %s target node %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", host, ns, nodeName, spec.Email, spec.RelayHost, spec.Email)
 		cmd3 := exec.Command("/bin/bash", "-c", message)
 		err := cmd3.Run()
 		if err != nil {
