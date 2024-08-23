@@ -102,7 +102,6 @@ spec:
                   type: string
                 type: array
             required:
-            - suspend
             - target
             type: object
           status:

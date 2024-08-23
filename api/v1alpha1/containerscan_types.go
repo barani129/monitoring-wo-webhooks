@@ -34,6 +34,7 @@ type ContainerScanSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Set suspend to true to disable monitoring the custom resource
+	// +optional
 	Suspend *bool `json:"suspend"`
 
 	// Containers in the target namespace will be monitored by the controller
