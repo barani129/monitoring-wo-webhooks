@@ -203,9 +203,10 @@ func SetIncidentID(spec *v1alpha1.VmScanSpec, status *v1alpha1.VmScanStatus, use
 			Timeout:   5 * time.Second,
 			Transport: &tr,
 		}
-	}
-	client = &http.Client{
-		Timeout: 5 * time.Second,
+	} else {
+		client = &http.Client{
+			Timeout: 5 * time.Second,
+		}
 	}
 	req, err := http.NewRequest("GET", getUrl, nil)
 	fmt.Println(req)
@@ -269,9 +270,10 @@ func SubNotifyExternalSystem(data map[string]string, status string, ns string, n
 			Timeout:   5 * time.Second,
 			Transport: &tr,
 		}
-	}
-	client = &http.Client{
-		Timeout: 5 * time.Second,
+	} else {
+		client = &http.Client{
+			Timeout: 5 * time.Second,
+		}
 	}
 	req, err := http.NewRequest("POST", url, b)
 	if err != nil {
@@ -316,9 +318,10 @@ func NotifyExternalSystem(data map[string]string, status string, ns string, node
 			Timeout:   5 * time.Second,
 			Transport: &tr,
 		}
-	}
-	client = &http.Client{
-		Timeout: 5 * time.Second,
+	} else {
+		client = &http.Client{
+			Timeout: 5 * time.Second,
+		}
 	}
 	req, err := http.NewRequest("POST", url, b)
 	if err != nil {
