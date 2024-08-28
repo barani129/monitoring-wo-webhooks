@@ -27,7 +27,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	monitoringv1alpha1 "github.com/barani129/container-scan/api/v1alpha1"
+	monitoringv1alpha1 "github.com/barani129/monitoring-wo-webhooks/api/v1alpha1"
 )
 
 var _ = Describe("ContainerScan Controller", func() {

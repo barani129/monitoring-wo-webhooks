@@ -1,8 +1,9 @@
-module github.com/barani129/container-scan
+module github.com/barani129/monitoring-wo-webhooks
 
 go 1.21
 
 require (
+	github.com/barani129/container-scan v0.0.0-20240701233057-c12b6fa32b4b
 	github.com/onsi/ginkgo/v2 v2.14.0
 	github.com/onsi/gomega v1.30.0
 	k8s.io/api v0.29.0

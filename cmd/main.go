@@ -35,8 +35,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	monitoringv1alpha1 "github.com/barani129/container-scan/api/v1alpha1"
-	"github.com/barani129/container-scan/internal/controller"
+	monitoringv1alpha1 "github.com/barani129/monitoring-wo-webhooks/api/v1alpha1"
+	"github.com/barani129/monitoring-wo-webhooks/internal/controller"
 	//+kubebuilder:scaffold:imports
 )
 
