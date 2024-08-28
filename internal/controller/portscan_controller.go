@@ -34,8 +34,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	monitoringv1alpha1 "github.com/barani129/container-scan/api/v1alpha1"
-	clusterUtil "github.com/barani129/container-scan/internal/portscan/portutil"
+	monitoringv1alpha1 "github.com/barani129/monitoring-wo-webhooks/api/v1alpha1"
+	clusterUtil "github.com/barani129/monitoring-wo-webhooks/internal/portscan/portutil"
 )
 
 // PortScanReconciler reconciles a PortScan object

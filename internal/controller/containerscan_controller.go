@@ -33,8 +33,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	monitoringv1alpha1 "github.com/barani129/container-scan/api/v1alpha1"
-	"github.com/barani129/container-scan/internal/containerscan/util"
+	monitoringv1alpha1 "github.com/barani129/monitoring-wo-webhooks/api/v1alpha1"
+	"github.com/barani129/monitoring-wo-webhooks/internal/containerscan/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"

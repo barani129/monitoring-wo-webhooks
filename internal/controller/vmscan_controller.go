@@ -34,8 +34,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	monitoringv1alpha1 "github.com/barani129/container-scan/api/v1alpha1"
-	vmUtil "github.com/barani129/container-scan/internal/vmscan/util"
+	monitoringv1alpha1 "github.com/barani129/monitoring-wo-webhooks/api/v1alpha1"
+	vmUtil "github.com/barani129/monitoring-wo-webhooks/internal/vmscan/util"
 	corev1 "k8s.io/api/core/v1"
 	kubev1 "kubevirt.io/api/core/v1"
 )

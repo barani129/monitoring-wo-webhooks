@@ -24,7 +24,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/barani129/container-scan/test/utils"
+	"github.com/barani129/monitoring-wo-webhooks/test/utils"
 )
 
 const namespace = "container-scan-system"
