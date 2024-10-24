@@ -7,3 +7,9 @@ metadata:
   name: containerscan-sample
 spec:
   # TODO(user): Add fields here
+  checkInterval: 30
+  targetNamespace:
+  - default
+  suspend: false
+  suspendEmailAlert: true
+  notifyExternal: false
