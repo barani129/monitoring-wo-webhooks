@@ -195,7 +195,7 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 						} else {
 							if slices.Contains(vmStatus.Migrations, vm.Name+":"+ns) {
 								idx := slices.Index(vmStatus.Migrations, vm.Name+":"+ns)
-								deleteElementSlice(vmStatus.Migrations, idx)
+								vmStatus.Migrations = deleteElementSlice(vmStatus.Migrations, idx)
 							}
 						}
 					}
@@ -268,7 +268,7 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 							}
 							if slices.Contains(vmStatus.IncidentID, incident) {
 								idx := slices.Index(vmStatus.IncidentID, incident)
-								deleteElementSlice(vmStatus.IncidentID, idx)
+								vmStatus.IncidentID = deleteElementSlice(vmStatus.IncidentID, idx)
 							}
 							err = vmUtil.SubNotifyExternalSystem(data, "resolved", ns, node.Name, vmSpec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s.txt", ns, node.Name), vmStatus)
 							if err != nil {
@@ -311,7 +311,7 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 							} else {
 								if slices.Contains(vmStatus.Migrations, vm.Name+":"+ns) {
 									idx := slices.Index(vmStatus.Migrations, vm.Name+":"+ns)
-									deleteElementSlice(vmStatus.Migrations, idx)
+									vmStatus.Migrations = deleteElementSlice(vmStatus.Migrations, idx)
 								}
 							}
 						}
@@ -382,7 +382,7 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 								}
 								if slices.Contains(vmStatus.IncidentID, incident) {
 									idx := slices.Index(vmStatus.IncidentID, incident)
-									deleteElementSlice(vmStatus.IncidentID, idx)
+									vmStatus.IncidentID = deleteElementSlice(vmStatus.IncidentID, idx)
 								}
 								err = vmUtil.SubNotifyExternalSystem(data, "resolved", ns, node.Name, vmSpec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s.txt", ns, node.Name), vmStatus)
 								if err != nil {

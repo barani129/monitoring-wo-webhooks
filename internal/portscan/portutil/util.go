@@ -334,7 +334,6 @@ func SendEmailAlert(target string, filename string, spec *v1alpha1.PortScanSpec,
 
 	} else {
 		data, _ := ReadFile(filename)
-		fmt.Println(data)
 		if data != "sent" {
 			message := fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: Port unreachability alert from %s" "target %s is unreachable on port %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", host, targets[0], targets[1], spec.Email, spec.RelayHost, spec.Email)
 			cmd3 := exec.Command("/bin/bash", "-c", message)

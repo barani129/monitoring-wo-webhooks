@@ -18,7 +18,87 @@ rules:
   - events
   verbs:
   - create
+  - get
   - patch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods/attach
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods/exec
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods/log
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods/portforward
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods/proxy
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods/status
+  verbs:
+  - create
+  - get
+  - list
+  - watch
 - apiGroups:
   - ""
   resources:
@@ -27,6 +107,48 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - metallb.io/v1beta1
+  resources:
+  - bgpadvertisements
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - metallb.io/v1beta1
+  resources:
+  - ipaddresspools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - monitoring.spark.co.nz
+  resources:
+  - metallbscans
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - monitoring.spark.co.nz
+  resources:
+  - metallbscans/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - monitoring.spark.co.nz
+  resources:
+  - metallbscans/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - monitoring.spark.co.nz
   resources:
@@ -73,3 +195,11 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - openshift.io/v1
+  resources:
+  - machineconfigpools
+  verbs:
+  - get
+  - list
+  - watch
