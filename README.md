@@ -6,9 +6,10 @@ Custom resource approach to monitor containers that are terminated with non-zero
 
 After the CRD installation, please execute the following command to under each field in the spec.
 ```sh
-kubectl/oc explain containerscan.monitoring.spark.co.nz
-kubectl/oc explain portscan.monitoring.spark.co.nz
-kubectl/oc explain vmscan.monitoring.spark.co.nz
+kubectl/oc explain containerscans.monitoring.spark.co.nz
+kubectl/oc explain portscans.monitoring.spark.co.nz
+kubectl/oc explain vmscans.monitoring.spark.co.nz
+kubectl/oc explain metallbscanis.monitoring.spark.co.nz
 ```
 vmscan CRD is for reporting if more than one VM is running on the same host, this may not be much useful to others, but installing the CRD is required to avoid errors in the controller deployment logs.
 
@@ -19,6 +20,7 @@ Sample deployment
 oc create -f monitoring-wo-webhooks/config/crd/bases/monitoring.spark.co.nz_containerscans.yaml
 oc create -f monitoring-wo-webhooks/config/crd/bases/monitoring.spark.co.nz_portscans.yaml
 oc create -f monitoring-wo-webhooks/config/crd/bases/monitoring.spark.co.nz_vmscans.yaml
+oc create -f monitoring-wo-webhooks/config/crd/bases/monitoring.spark.co.nz_metallbscans.yaml
 ```
 2. Create the service account
 ```sh
