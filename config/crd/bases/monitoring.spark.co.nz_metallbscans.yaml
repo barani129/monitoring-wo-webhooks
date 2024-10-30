@@ -103,7 +103,7 @@ spec:
                 description: Set suspend to true to disable monitoring the custom
                   resource
                 type: boolean
-              suspendEmail:
+              suspendEmailAlert:
                 description: Suspends email alerts if set to true, target users will
                   not be notified
                 type: boolean

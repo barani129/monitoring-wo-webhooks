@@ -483,6 +483,7 @@ func CheckLBIPRoute(outFile *os.File, LBIP string) (bool, bool, string, error) {
 		return false, false, "", err
 	}
 	contents := strings.Split(string(content), "\n")
+	os.Remove(outFile.Name())
 	for _, line := range contents {
 		if strings.Contains(line, lbRouteIP) {
 			flds := strings.Split(line, " ")
@@ -495,7 +496,7 @@ func CheckLBIPRoute(outFile *os.File, LBIP string) (bool, bool, string, error) {
 			}
 		}
 	}
-	os.Remove(outFile.Name())
+
 	return false, false, "", nil
 }
 

@@ -108,7 +108,23 @@ rules:
   - list
   - watch
 - apiGroups:
-  - metallb.io/v1beta1
+  - ""
+  resources:
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - machineconfiguration.openshift.io
+  resources:
+  - machineconfigpools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - metallb.io
   resources:
   - bgpadvertisements
   verbs:
@@ -116,7 +132,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - metallb.io/v1beta1
+  - metallb.io
   resources:
   - ipaddresspools
   verbs:
@@ -195,11 +211,3 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - openshift.io/v1
-  resources:
-  - machineconfigpools
-  verbs:
-  - get
-  - list
-  - watch
