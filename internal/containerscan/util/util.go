@@ -355,7 +355,6 @@ func SetIncidentID(spec *v1alpha1.ContainerScanSpec, status *v1alpha1.ContainerS
 		Timeout: 5 * time.Second,
 	}
 	req, err := http.NewRequest("GET", getUrl, nil)
-	fmt.Println(req)
 	if err != nil {
 		return "", err
 	}

@@ -214,7 +214,7 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 				} else {
 					if slices.Contains(clusterStatus.AffectedTargets, target) {
 						idx := slices.Index(clusterStatus.AffectedTargets, target)
-						deleteElementSlice(clusterStatus.AffectedTargets, idx)
+						clusterStatus.AffectedTargets = deleteElementSlice(clusterStatus.AffectedTargets, idx)
 					}
 					if !*clusterSpec.SuspendEmailAlert {
 						clusterUtil.SendEmailReachableAlert(target, fmt.Sprintf("/home/golanguser/%s-%s.txt", ip[0], ip[1]), clusterSpec, ip[0])
@@ -230,7 +230,7 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 						}
 						if slices.Contains(clusterStatus.IncidentID, incident) {
 							idx := slices.Index(clusterStatus.IncidentID, incident)
-							deleteElementSlice(clusterStatus.IncidentID, idx)
+							clusterStatus.IncidentID = deleteElementSlice(clusterStatus.IncidentID, idx)
 						}
 
 						err = clusterUtil.SubNotifyExternalSystem(data, "resolved", target, clusterSpec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s.txt", ip[0], ip[1]), clusterStatus)
@@ -268,12 +268,12 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 					if _, err := os.Stat(fmt.Sprintf("/home/golanguser/%s-%s-ext.txt", ip[0], ip[1])); os.IsNotExist(err) {
 						if slices.Contains(clusterStatus.AffectedTargets, target) {
 							idx := slices.Index(clusterStatus.AffectedTargets, target)
-							deleteElementSlice(clusterStatus.AffectedTargets, idx)
+							clusterStatus.AffectedTargets = deleteElementSlice(clusterStatus.AffectedTargets, idx)
 						}
 					} else {
 						if slices.Contains(clusterStatus.AffectedTargets, target) {
 							idx := slices.Index(clusterStatus.AffectedTargets, target)
-							deleteElementSlice(clusterStatus.AffectedTargets, idx)
+							clusterStatus.AffectedTargets = deleteElementSlice(clusterStatus.AffectedTargets, idx)
 						}
 						if clusterSpec.SuspendEmailAlert != nil && !*clusterSpec.SuspendEmailAlert {
 							clusterUtil.SendEmailReachableAlert(target, fmt.Sprintf("/home/golanguser/%s-%s.txt", ip[0], ip[1]), clusterSpec, ip[0])
@@ -289,7 +289,7 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 							}
 							if slices.Contains(clusterStatus.IncidentID, incident) {
 								idx := slices.Index(clusterStatus.IncidentID, incident)
-								deleteElementSlice(clusterStatus.IncidentID, idx)
+								clusterStatus.IncidentID = deleteElementSlice(clusterStatus.IncidentID, idx)
 							}
 
 							err = clusterUtil.SubNotifyExternalSystem(data, "resolved", target, clusterSpec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s.txt", ip[0], ip[1]), clusterStatus)

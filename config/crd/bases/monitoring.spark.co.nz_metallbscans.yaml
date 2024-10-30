@@ -4,14 +4,14 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.14.0
-  name: containerscans.monitoring.spark.co.nz
+  name: metallbscans.monitoring.spark.co.nz
 spec:
   group: monitoring.spark.co.nz
   names:
-    kind: ContainerScan
-    listKind: ContainerScanList
-    plural: containerscans
-    singular: containerscan
+    kind: MetallbScan
+    listKind: MetallbScanList
+    plural: metallbscans
+    singular: metallbscan
   scope: Cluster
   versions:
   - additionalPrinterColumns:
@@ -23,23 +23,24 @@ spec:
       jsonPath: .status.conditions[].status
       name: Ready
       type: string
+    - description: last healthcheck run timestamp(in cluster's timezone)
+      jsonPath: .status.lastRunTime
+      name: LastRunTime
+      type: string
+    - description: 'last successful run timestamp(in cluster''s timezone) where cluster
+        is error free '
+      jsonPath: .status.lastSuccessfulRunTime
+      name: LastSuccessfulRunTime
+      type: string
     - description: last successful run (where there is no failed containers) timestamp(in
         cluster's timezone)
-      jsonPath: .status.lastRunTime
-      name: LastSuccessfulTime
-      type: string
-    - description: indicates if the external system is notified
-      jsonPath: .status.externalNotified
-      name: ExternalNotified
-      type: string
-    - description: incident ID from service now
-      jsonPath: .status.incidentID
-      name: IncidentID
+      jsonPath: .status.healthy
+      name: Healthy
       type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: ContainerScan is the Schema for the containerscans API
+        description: MetallbScan is the Schema for the metallbscans API
         properties:
           apiVersion:
             description: |-
@@ -59,19 +60,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: ContainerScanSpec defines the desired state of ContainerScan
+            description: MetallbScanSpec defines the desired state of MetallbScan
             properties:
-              aggregateAlerts:
-                description: aggregate external alerts per pod, if set to false, alarm
-                  will be raised for each problematic container
-                type: boolean
               checkInterval:
-                description: the frequency of checks to be done, if not set, defaults
-                  to 2 minutes
+                description: frequency of the check. If not set, it defaults to 2
+                  mins.
                 format: int64
                 type: integer
+              cluster:
+                description: Target cluster name for using the cluster name in notifications
+                type: string
               email:
-                description: Target user's email for container status notification
+                description: Target user's email for cluster status notification
                 type: string
               externalData:
                 description: Data to be sent to the external system in the form of
@@ -79,43 +79,43 @@ spec:
                 type: string
               externalSecret:
                 description: Secret which has the username and password to post the
-                  alert notification to the external system
+                  alert notification to the external system using Authorization header
                 type: string
               externalURL:
-                description: URL of the external alert system
+                description: 'URL of the external alert system. Example: http://notify.example.com/
+                  (both http/https supported with basic authentication)'
+                type: string
+              metalLbNamespace:
+                description: Target metallb namespace
                 type: string
               notifyExternal:
-                description: To notify the external alerting system, boolean (true,
-                  false). Set true to notify the external system.
+                description: To notify the external alerting system
                 type: boolean
               relayHost:
-                description: SMTP Relay host for sending the email
+                description: Relay host for sending the email
                 type: string
+              speakerPodLabel:
+                additionalProperties:
+                  type: string
+                description: Label for selecting workers
+                type: object
               suspend:
                 description: Set suspend to true to disable monitoring the custom
                   resource
                 type: boolean
-              suspendEmailAlert:
-                description: Suspends email alerts if set to true, target email (.spec.email)
-                  will not be notified
+              suspendEmail:
+                description: Suspends email alerts if set to true, target users will
+                  not be notified
                 type: boolean
-              targetNamespace:
-                description: Containers in the target namespace will be monitored
-                  by the controller
-                items:
+              workerLabel:
+                additionalProperties:
                   type: string
-                type: array
-            required:
-            - targetNamespace
+                description: Label for selecting workers
+                type: object
             type: object
           status:
-            description: ContainerScanStatus defines the observed state of ContainerScan
+            description: MetallbScanStatus defines the observed state of MetallbScan
             properties:
-              affectedPods:
-                description: affected targets
-                items:
-                  type: string
-                type: array
               conditions:
                 description: |-
                   INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
@@ -154,17 +154,14 @@ spec:
                   - type
                   type: object
                 type: array
-              externalNotified:
-                description: Indicates if external alerting system is notified
-                type: boolean
-              externalNotifiedTime:
-                description: Indicates the timestamp when external alerting system
-                  is notified
-                format: date-time
-                type: string
+              failedChecks:
+                description: affected targets
+                items:
+                  type: string
+                type: array
               healthy:
-                description: Indicates if all metallb checks are completely error
-                  free
+                description: Indicates if all load balancer type services running
+                  fine/IPs are advertised by metallb speaker pods in the target cluster
                 type: boolean
               incidentID:
                 description: Incident ID from the rem. Spark specific
@@ -173,6 +170,11 @@ spec:
                 type: array
               lastRunTime:
                 description: last successful timestamp of retrieved cluster status
+                format: date-time
+                type: string
+              lastSuccessfulRunTime:
+                description: last successful timestamp of metallbscan, indicates if
+                  the metallb checks are completely healthy
                 format: date-time
                 type: string
             type: object

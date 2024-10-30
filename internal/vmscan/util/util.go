@@ -155,7 +155,6 @@ func SendEmailAlert(ns string, nodeName string, filename string, spec *v1alpha1.
 
 	} else {
 		data, _ := ReadFile(filename)
-		fmt.Println(data)
 		if data != "sent" {
 			message := fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: VM placement alert from %s" "" "one or more VMIs are found in target namespace %s are found on the same node %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", host, ns, nodeName, spec.Email, spec.RelayHost, spec.Email)
 			cmd3 := exec.Command("/bin/bash", "-c", message)

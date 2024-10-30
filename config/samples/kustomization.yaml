@@ -3,4 +3,5 @@ resources:
 - monitoring_v1alpha1_containerscan.yaml
 - monitoring_v1alpha1_portscan.yaml
 - monitoring_v1alpha1_vmscan.yaml
+- monitoring_v1alpha1_metallbscan.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

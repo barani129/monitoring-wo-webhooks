@@ -201,7 +201,7 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 					if err != nil {
 						if slices.Contains(containerStatus.AffectedPods, po[0]+":ns:"+actualNamespace) {
 							idx := slices.Index(containerStatus.AffectedPods, po[0]+":ns:"+actualNamespace)
-							deleteElementSlice(containerStatus.AffectedPods, idx)
+							containerStatus.AffectedPods = deleteElementSlice(containerStatus.AffectedPods, idx)
 						}
 						if containerSpec.AggregateAlerts != nil && *containerSpec.AggregateAlerts {
 							os.Remove(fmt.Sprintf("/home/golanguser/%s-%s-%s-ext.txt", "pod", po[0], actualNamespace))
@@ -397,7 +397,7 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 						if err != nil {
 							if slices.Contains(containerStatus.AffectedPods, po[0]+":ns:"+actualNamespace) {
 								idx := slices.Index(containerStatus.AffectedPods, po[0]+":ns:"+actualNamespace)
-								deleteElementSlice(containerStatus.AffectedPods, idx)
+								containerStatus.AffectedPods = deleteElementSlice(containerStatus.AffectedPods, idx)
 							}
 							if containerSpec.AggregateAlerts != nil && *containerSpec.AggregateAlerts {
 								os.Remove(fmt.Sprintf("/home/golanguser/%s-%s-%s-ext.txt", "pod", po[0], actualNamespace))
@@ -484,7 +484,7 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 							} else {
 								if slices.Contains(containerStatus.AffectedPods, pod.Name+":ns:"+actualNamespace) {
 									idx := slices.Index(containerStatus.AffectedPods, pod.Name+":ns:"+actualNamespace)
-									deleteElementSlice(containerStatus.AffectedPods, idx)
+									containerStatus.AffectedPods = deleteElementSlice(containerStatus.AffectedPods, idx)
 								}
 								if containerSpec.AggregateAlerts != nil && *containerSpec.AggregateAlerts {
 									if containerSpec.SuspendEmailAlert != nil && !*containerSpec.SuspendEmailAlert {
@@ -501,7 +501,7 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 										}
 										if slices.Contains(containerStatus.IncidentID, incident) {
 											idx := slices.Index(containerStatus.IncidentID, incident)
-											deleteElementSlice(containerStatus.IncidentID, idx)
+											containerStatus.IncidentID = deleteElementSlice(containerStatus.IncidentID, idx)
 										}
 										err = util.SubNotifyExternalSystem(data, "resolved", containerSpec.ExternalURL, username, password, pod.Name, container.Name, containerStatus, fmt.Sprintf("/home/golanguser/%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
 										if err != nil {
@@ -526,7 +526,7 @@ func (r *ContainerScanReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 										}
 										if slices.Contains(containerStatus.IncidentID, incident) {
 											idx := slices.Index(containerStatus.IncidentID, incident)
-											deleteElementSlice(containerStatus.IncidentID, idx)
+											containerStatus.IncidentID = deleteElementSlice(containerStatus.IncidentID, idx)
 										}
 										err = util.SubNotifyExternalSystem(data, "resolved", containerSpec.ExternalURL, username, password, pod.Name, container.Name, containerStatus, fmt.Sprintf("/home/golanguser/%s-%s-%s-ext.txt", container.Name, pod.Name, actualNamespace))
 										if err != nil {
