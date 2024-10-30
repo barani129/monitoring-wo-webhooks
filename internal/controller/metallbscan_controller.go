@@ -297,10 +297,11 @@ func (r *MetallbScanReconciler) newIssuer() (client.Object, error) {
 //+kubebuilder:rbac:groups="",resources=pods/attach,verbs=get;create;list;watch
 //+kubebuilder:rbac:groups="",resources=pods/log,verbs=get;create;list;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
-//+kubebuilder:rbac:groups="metallb.io/v1beta1",resources=ipaddresspools,verbs=get;list;watch
-//+kubebuilder:rbac:groups="metallb.io/v1beta1",resources=bgpadvertisements,verbs=get;list;watch
-//+kubebuilder:rbac:groups="openshift.io/v1",resources=machineconfigpools,verbs=get;list;watch
+//+kubebuilder:rbac:groups="metallb.io",resources=ipaddresspools,verbs=get;list;watch
+//+kubebuilder:rbac:groups="metallb.io",resources=bgpadvertisements,verbs=get;list;watch
+//+kubebuilder:rbac:groups="machineconfiguration.openshift.io",resources=machineconfigpools,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch;get
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -411,9 +412,9 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	var defaultHealthCheckIntervalMetal time.Duration
 	if spec.CheckInterval != nil {
-		defaultHealthCheckIntervalMetal = time.Duration(*spec.CheckInterval)
+		defaultHealthCheckIntervalMetal = time.Minute * time.Duration(*spec.CheckInterval)
 	} else {
-		defaultHealthCheckIntervalMetal = time.Minute * 15
+		defaultHealthCheckIntervalMetal = time.Minute * 30
 	}
 
 	if spec.Suspend != nil && *spec.Suspend {
@@ -424,16 +425,17 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	//get config from openshift's openshift-apiserver
 	var runningHost string
 	domain, err := util.GetAPIName(*clientset)
-	if err == nil || domain == "" {
+	if err == nil && domain == "" {
 		if spec.Cluster != nil {
 			runningHost = *spec.Cluster
 		}
 	} else if err == nil && domain != "" {
 		runningHost = domain
-		println("domainName", runningHost)
 	} else {
+		log.Log.Error(err, "unable to retrieve ocp config")
 		runningHost = "local-cluster"
 	}
+
 	var metallbNamespace string
 	if spec.MetallbNamespace != nil && *spec.MetallbNamespace != "" {
 		metallbNamespace = *spec.MetallbNamespace
@@ -448,6 +450,8 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 	var speakerPodLabel map[string]string
 	if spec.SpeakerPodLabel != nil {
+		speakerPodLabel = *spec.SpeakerPodLabel
+	} else {
 		speakerPodLabel = map[string]string{"component": "speaker"}
 	}
 	nodeSelector := v1.LabelSelector{
@@ -457,20 +461,21 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		MatchLabels: speakerPodLabel,
 	}
 
-	mcpRunning, err := isMcpUpdating(*clientset)
-	if err != nil && errors.IsNotFound(err) {
-		log.Log.Info("machineconfigpools.openshift.io/v1 is not configured in this cluster, proceeding further.")
-	} else if err != nil {
-		log.Log.Error(err, "unable to retrieve machineconfigpools.openshift.io/v1")
-	}
-	if mcpRunning {
-		log.Log.Info("machineconfigpool update is in progress, existing")
-		return ctrl.Result{}, err
-	} else {
-		log.Log.Info("machineconfigpools.openshift.io/v1 update is not in progress, proceeding further.")
-	}
 	var wg sync.WaitGroup
 	if status.LastRunTime == nil {
+		log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
+		mcpRunning, err := isMcpUpdating(*clientset)
+		if err != nil && errors.IsNotFound(err) {
+			log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
+		} else if err != nil {
+			log.Log.Error(err, "unable to retrieve machineconfigpools.machineconfiguration.openshift.io/v1")
+		}
+		if mcpRunning {
+			log.Log.Info("machineconfigpool update is in progress, existing")
+			return ctrl.Result{}, err
+		} else {
+			log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 update is not in progress, proceeding further.")
+		}
 		log.Log.Info("Checking for load balancer type services")
 		lbsvcs, lbsvcsnoip, err := util.GetLoadBalancerSevices(*clientset)
 		if err != nil {
@@ -481,6 +486,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			return ctrl.Result{}, err
 		}
 		if len(lbsvcsnoip) > 0 {
+
 			for _, sv := range lbsvcsnoip {
 				svc := strings.Split(sv, ":")
 				if !slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s is found with no valid IP in namespace %s", svc[0], svc[1])) {
@@ -618,11 +624,11 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 
 		log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
-		mcpRunning, err := isMcpUpdating(*clientset)
+		mcpRunning, err = isMcpUpdating(*clientset)
 		if err != nil && errors.IsNotFound(err) {
-			log.Log.Info("machineconfigpools.openshift.io/v1 is not configured in this cluster")
+			log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
 		} else if err != nil {
-			log.Log.Error(err, "unable to retrieve machineconfigpools.openshift.io/v1")
+			log.Log.Error(err, "unable to retrieve machineconfigpools.machineconfiguration.openshift.io/v1")
 		}
 		if mcpRunning {
 			log.Log.Info("machineconfigpool update is in progress, existing")
@@ -649,7 +655,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 
 		if len(affectedLBService) < 1 && len(lbWithNoEndpoints) < 1 {
-			log.Log.Info("All configured load balancer type services have healthy endpoints(pods)")
+			log.Log.Info("All configured load balancer type services with a valid IP have healthy endpoints(pods)")
 		}
 		if len(affectedLBService) > 0 {
 			wg.Add(len(affectedLBService))
@@ -819,16 +825,20 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			wg.Wait()
 		}
 
+		log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
 		mcpRunning, err = isMcpUpdating(*clientset)
 		if err != nil && errors.IsNotFound(err) {
-			log.Log.Info("machineconfigpools.openshift.io/v1 is not configured in this cluster")
+			log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
 		} else if err != nil {
-			log.Log.Error(err, "unable to retrieve machineconfigpools.openshift.io/v1")
+			log.Log.Error(err, "unable to retrieve machineconfigpools.machineconfiguration.openshift.io/v1")
 		}
 		if mcpRunning {
 			log.Log.Info("machineconfigpool update is in progress, existing")
 			return ctrl.Result{}, err
+		} else {
+			log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 update is not in progress, proceeding further.")
 		}
+
 		log.Log.Info("Checking if loadbalancer type service's external IP is advertised by speaker pods where endpoints are running")
 		bgpRoute, err := GetBGPIPRoute(r, *clientset, metallbNamespace, speakerSelector, lbService)
 		if err != nil {
@@ -893,11 +903,37 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 			wg.Wait()
 		}
-
+		now := v1.Now()
+		status.LastRunTime = &now
+		if len(status.FailedChecks) < 1 {
+			status.Healthy = true
+			now := v1.Now()
+			status.LastSuccessfulRunTime = &now
+			log.Log.Info("All configured load balancer type services with a valid IP have healthy endpoints(pods)")
+			log.Log.Info("All configured load balancer type services are advertised from respective endpoint's worker nodes")
+			log.Log.Info("All worker's speaker pods have established BGP session with remote hops.")
+			report(monitoringv1alpha1.ConditionTrue, "All healthchecks are completed successfully.", nil)
+		} else {
+			status.Healthy = false
+			report(monitoringv1alpha1.ConditionFalse, "Some checks are failing, please check status.FailedChecks for list of failures.", nil)
+		}
 	} else {
 		pastTime := time.Now().Add(-1 * defaultHealthCheckIntervalMetal)
 		timeDiff := status.LastRunTime.Time.Before(pastTime)
 		if timeDiff {
+			log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
+			mcpRunning, err := isMcpUpdating(*clientset)
+			if err != nil && errors.IsNotFound(err) {
+				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
+			} else if err != nil {
+				log.Log.Error(err, "unable to retrieve machineconfigpools.machineconfiguration.openshift.io/v1")
+			}
+			if mcpRunning {
+				log.Log.Info("machineconfigpool update is in progress, existing")
+				return ctrl.Result{}, err
+			} else {
+				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 update is not in progress, proceeding further.")
+			}
 			log.Log.Info("Checking for load balancer type services")
 			lbsvcs, lbsvcsnoip, err := util.GetLoadBalancerSevices(*clientset)
 			if err != nil {
@@ -1161,15 +1197,17 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 
 			log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
-			mcpRunning, err := isMcpUpdating(*clientset)
+			mcpRunning, err = isMcpUpdating(*clientset)
 			if err != nil && errors.IsNotFound(err) {
-				log.Log.Info("machineconfigpools.openshift.io/v1 is not configured in this cluster")
+				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
 			} else if err != nil {
-				log.Log.Error(err, "unable to retrieve machineconfigpools.openshift.io/v1")
+				log.Log.Error(err, "unable to retrieve machineconfigpools.machineconfiguration.openshift.io/v1")
 			}
 			if mcpRunning {
 				log.Log.Info("machineconfigpool update is in progress, existing")
 				return ctrl.Result{}, err
+			} else {
+				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 update is not in progress, proceeding further.")
 			}
 
 			log.Log.Info("Checking endpoints and target pods status for loadbalancer type services service.core/v1")
@@ -1191,7 +1229,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 
 			if len(affectedLBService) < 1 && len(lbWithNoEndpoints) < 1 {
-				log.Log.Info("All configured load balancer type services have healthy endpoints(pods)")
+				log.Log.Info("All configured load balancer type services with a valid IP have healthy endpoints(pods)")
 			}
 			if len(affectedLBService) > 0 {
 				wg.Add(len(affectedLBService))
@@ -1332,16 +1370,20 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				wg.Wait()
 			}
 
+			log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
 			mcpRunning, err = isMcpUpdating(*clientset)
 			if err != nil && errors.IsNotFound(err) {
-				log.Log.Info("machineconfigpools.openshift.io/v1 is not configured in this cluster")
+				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
 			} else if err != nil {
-				log.Log.Error(err, "unable to retrieve machineconfigpools.openshift.io/v1")
+				log.Log.Error(err, "unable to retrieve machineconfigpools.machineconfiguration.openshift.io/v1")
 			}
 			if mcpRunning {
 				log.Log.Info("machineconfigpool update is in progress, existing")
 				return ctrl.Result{}, err
+			} else {
+				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 update is not in progress, proceeding further.")
 			}
+
 			log.Log.Info("Checking BGP next hop status from each worker's speaker pods")
 			bgpHop, err := CheckBGPHopWorkers(r, *clientset, metallbNamespace, nodeSelector, speakerSelector)
 			if err != nil {
@@ -1516,17 +1558,20 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				wg.Wait()
 			}
 
-			log.Log.Info("Checking if machineconfigpool update is in progress")
+			log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
 			mcpRunning, err = isMcpUpdating(*clientset)
 			if err != nil && errors.IsNotFound(err) {
-				log.Log.Info("machineconfigpools.openshift.io/v1 is not configured in this cluster")
+				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
 			} else if err != nil {
-				log.Log.Error(err, "unable to retrieve machineconfigpools.openshift.io/v1")
+				log.Log.Error(err, "unable to retrieve machineconfigpools.machineconfiguration.openshift.io/v1")
 			}
 			if mcpRunning {
 				log.Log.Info("machineconfigpool update is in progress, existing")
 				return ctrl.Result{}, err
+			} else {
+				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 update is not in progress, proceeding further.")
 			}
+
 			log.Log.Info("Checking if loadbalancer type service's external IP is advertised by speaker pods where endpoints are running")
 			bgpRoute, err := GetBGPIPRoute(r, *clientset, metallbNamespace, speakerSelector, lbService)
 			if err != nil {
@@ -1648,20 +1693,23 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				}
 				wg.Wait()
 			}
+			now := v1.Now()
+			status.LastRunTime = &now
+			if len(status.FailedChecks) < 1 {
+				status.Healthy = true
+				now := v1.Now()
+				status.LastSuccessfulRunTime = &now
+				log.Log.Info("All configured load balancer type services with a valid IP have healthy endpoints(pods)")
+				log.Log.Info("All configured load balancer type services are advertised from respective endpoint's worker nodes")
+				log.Log.Info("All worker's speaker pods have established BGP session with remote hops.")
+				report(monitoringv1alpha1.ConditionTrue, "All healthchecks are completed successfully.", nil)
+			} else {
+				status.Healthy = false
+				report(monitoringv1alpha1.ConditionFalse, "Some checks are failing, please check status.FailedChecks for list of failures.", nil)
+			}
 		}
 	}
 
-	if len(status.FailedChecks) < 1 {
-		status.Healthy = true
-		now := v1.Now()
-		status.LastSuccessfulRunTime = &now
-		report(monitoringv1alpha1.ConditionTrue, "All healthchecks are completed successfully.", nil)
-	} else {
-		status.Healthy = false
-		report(monitoringv1alpha1.ConditionFalse, "Some checks are failing, please check status.FailedChecks for list of failures.", nil)
-	}
-	now := v1.Now()
-	status.LastRunTime = &now
 	return ctrl.Result{RequeueAfter: defaultHealthCheckIntervalMetal}, nil
 }
 

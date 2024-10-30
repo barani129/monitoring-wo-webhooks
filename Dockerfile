@@ -24,6 +24,7 @@ COPY --chown=golanguser:golanguser internal/controller/ internal/controller/
 COPY --chown=golanguser:golanguser internal/containerscan/ internal/containerscan/
 COPY --chown=golanguser:golanguser internal/portscan/ internal/portscan/
 COPY --chown=golanguser:golanguser internal/vmscan/ internal/vmscan/
+COPY --chown=golanguser:golanguser internal/metallbscan/ internal/metallbscan/
 
 # Build
 # the GOARCH has not a default value to allow the binary be built according to the host where the command
