@@ -1,4 +1,4 @@
-package metalutil
+package util
 
 import (
 	"bytes"
@@ -19,7 +19,7 @@ import (
 
 	"github.com/barani129/monitoring-wo-webhooks/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -402,7 +402,7 @@ func GetAPIName(clientset kubernetes.Clientset) (domain string, err error) {
 }
 
 func GetLoadBalancerSevices(clientset kubernetes.Clientset) ([]string, []string, error) {
-	svcList, err := clientset.CoreV1().Services("").List(context.Background(), v1.ListOptions{})
+	svcList, err := clientset.CoreV1().Services("").List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -426,10 +426,10 @@ func GetLoadBalancerSevices(clientset kubernetes.Clientset) ([]string, []string,
 	return loadbalancersvc, loadbalancersvcnoip, nil
 }
 
-func GetpodsFromNodeBasedonLabels(clientset kubernetes.Clientset, nodeName string, namespace string, labelSelector v1.LabelSelector) (int, []string, error) {
+func GetpodsFromNodeBasedonLabels(clientset kubernetes.Clientset, nodeName string, namespace string, labelSelector metav1.LabelSelector) (int, []string, error) {
 	var pods []string
 	fieldSelector := fmt.Sprintf(`spec.nodeName=%s`, nodeName)
-	podList, err := clientset.CoreV1().Pods(namespace).List(context.Background(), v1.ListOptions{
+	podList, err := clientset.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{
 		LabelSelector: labels.Set(labelSelector.MatchLabels).String(),
 		FieldSelector: fieldSelector,
 	})
