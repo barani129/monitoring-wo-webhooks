@@ -486,20 +486,19 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			return ctrl.Result{}, err
 		}
 		if len(lbsvcsnoip) > 0 {
-
 			for _, sv := range lbsvcsnoip {
 				svc := strings.Split(sv, ":")
 				if !slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s is found with no valid IP in namespace %s", svc[0], svc[1])) {
 					if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-						util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc[0], svc[1], "noip"), spec, fmt.Sprintf("Service %s in namespace %s is found with no valid IP in cluster %s", svc[0], svc[1], runningHost))
+						util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc[0], svc[1], "noip"), spec, fmt.Sprintf("Service %s in namespace %s is found with no valid IP in cluster %s", svc[0], svc[1], runningHost))
 					}
 					status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("Service %s is found with no valid IP in namespace %s", svc[0], svc[1]))
 					if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-						err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc[0], svc[1], "alertnoip"), fmt.Sprintf("Service %s in namespace %s is found with no valid IP in cluster %s", svc[0], svc[1], runningHost))
+						err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc[0], svc[1], "alertnoip"), fmt.Sprintf("Service %s in namespace %s is found with no valid IP in cluster %s", svc[0], svc[1], runningHost))
 						if err != nil {
 							log.Log.Error(err, "Failed to notify the external system")
 						}
-						fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc[0], svc[1], "alertnoip"))
+						fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc[0], svc[1], "alertnoip"))
 						if err != nil {
 							log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 						}
@@ -529,15 +528,15 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 					if !peer.conPool {
 						if !slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s configured in namespace %s is not part of any configured IP pools ", peer.name, peer.namespace)) {
 							if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s.txt", peer.name, "ippool"), spec, fmt.Sprintf("Service %s configured in namespace %s is not part of any configured IP pools in target cluster %s ", peer.name, peer.namespace, runningHost))
+								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", peer.name, "ippool"), spec, fmt.Sprintf("Service %s configured in namespace %s is not part of any configured IP pools in target cluster %s ", peer.name, peer.namespace, runningHost))
 							}
 							status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("Service %s configured in namespace %s is not part of any configured IP pools ", peer.name, peer.namespace))
 							if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s.txt", peer.name, "alertippool"), fmt.Sprintf("Service %s configured in namespace %s is not part of any configured IP pools", peer.name, peer.namespace))
+								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", peer.name, "alertippool"), fmt.Sprintf("Service %s configured in namespace %s is not part of any configured IP pools", peer.name, peer.namespace))
 								if err != nil {
 									log.Log.Error(err, "Failed to notify the external system")
 								}
-								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s.txt", peer.name, "alertippool"))
+								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s.txt", peer.name, "alertippool"))
 								if err != nil {
 									log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 								}
@@ -571,15 +570,15 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 					if !ad.advertised {
 						if !slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname)) {
 							if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s.txt", ad.poolname, "advertised"), spec, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1 in cluster %s", ad.svcname, ad.namespace, ad.poolname, runningHost))
+								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "advertised"), spec, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1 in cluster %s", ad.svcname, ad.namespace, ad.poolname, runningHost))
 							}
 							status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname))
 							if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s.txt", ad.poolname, "alertadvertised"), fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 which is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname))
+								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "alertadvertised"), fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 which is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname))
 								if err != nil {
 									log.Log.Error(err, "Failed to notify the external system")
 								}
-								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s.txt", ad.poolname, "alertadvertised"))
+								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "alertadvertised"))
 								if err != nil {
 									log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 								}
@@ -596,15 +595,15 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 					if ad.peers == nil {
 						if !slices.Contains(status.FailedChecks, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName)) {
 							if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s.txt", ad.advName, "nopeer"), spec, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
+								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "nopeer"), spec, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
 							}
 							status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
 							if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s.txt", ad.advName, "alertnopeer"), fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
+								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "alertnopeer"), fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
 								if err != nil {
 									log.Log.Error(err, "Failed to notify the external system")
 								}
-								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s.txt", ad.advName, "alertnopeer"))
+								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "alertnopeer"))
 								if err != nil {
 									log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 								}
@@ -666,15 +665,15 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						if svc.name == lbs {
 							if !slices.Contains(status.FailedChecks, fmt.Sprintf("One of the endpoints of Service %s in namespace %s is not running", svc.name, svc.namespace)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc.name, svc.namespace, "nonrunningendpoint"), spec, fmt.Sprintf("One of the endpoints of Service %s in namespace %s is not running in cluster", svc.name, svc.namespace, runningHost))
+									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "nonrunningendpoint"), spec, fmt.Sprintf("One of the endpoints of Service %s in namespace %s is not running in cluster", svc.name, svc.namespace, runningHost))
 								}
 								status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("One of the endpoints of Service %s in namespace %s is not running", svc.name, svc.namespace))
 								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-									err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc.name, svc.namespace, "alertnonrunningendpoint"), fmt.Sprintf("One of the endpoints of Service %s in namespace %s is not running in cluster", svc.name, svc.namespace, runningHost))
+									err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "alertnonrunningendpoint"), fmt.Sprintf("One of the endpoints of Service %s in namespace %s is not running in cluster", svc.name, svc.namespace, runningHost))
 									if err != nil {
 										log.Log.Error(err, "Failed to notify the external system")
 									}
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc.name, svc.namespace, "alertnonrunningendpoint"))
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "alertnonrunningendpoint"))
 									if err != nil {
 										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 									}
@@ -699,15 +698,15 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 					if sv == svc.name {
 						if !slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s in namespace %s doesn't have any endpoints/pods", svc.name, svc.namespace)) {
 							if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc.name, svc.namespace, "noendpoint"), spec, fmt.Sprintf("Service %s in namespace %s doesn't have any endpoints/pods in cluster %s", svc.name, svc.namespace, runningHost))
+								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "noendpoint"), spec, fmt.Sprintf("Service %s in namespace %s doesn't have any endpoints/pods in cluster %s", svc.name, svc.namespace, runningHost))
 							}
 							status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("Service %s in namespace %s doesn't have any endpoints/pods", svc.name, svc.namespace))
 							if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc.name, svc.namespace, "alertnoendpoint"), fmt.Sprintf("Service %s in namespace %s doesn't have any endpoints/pods in cluster %s", svc.name, svc.namespace, runningHost))
+								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "alertnoendpoint"), fmt.Sprintf("Service %s in namespace %s doesn't have any endpoints/pods in cluster %s", svc.name, svc.namespace, runningHost))
 								if err != nil {
 									log.Log.Error(err, "Failed to notify the external system")
 								}
-								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc.name, svc.namespace, "alertnoendpoint"))
+								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "alertnoendpoint"))
 								if err != nil {
 									log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 								}
@@ -748,15 +747,15 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 					if hop.established != "Established" {
 						if !slices.Contains(status.FailedChecks, fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod", hop.ip, hop.nodeName)) {
 							if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notestablished"), spec, fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
+								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notestablished"), spec, fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
 							}
 							status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod", hop.ip, hop.nodeName))
 							if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotestablished"), fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
+								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotestablished"), fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
 								if err != nil {
 									log.Log.Error(err, "Failed to notify the external system")
 								}
-								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotestablished"))
+								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotestablished"))
 								if err != nil {
 									log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 								}
@@ -773,15 +772,15 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 					if !hop.valid {
 						if !slices.Contains(status.FailedChecks, fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s' speaker pod", hop.ip, hop.nodeName)) {
 							if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notvalid"), spec, fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
+								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notvalid"), spec, fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
 							}
 							status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s' speaker pod", hop.ip, hop.nodeName))
 							if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotvalid"), fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
+								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotvalid"), fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
 								if err != nil {
 									log.Log.Error(err, "Failed to notify the external system")
 								}
-								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotvalid"))
+								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotvalid"))
 								if err != nil {
 									log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 								}
@@ -798,15 +797,15 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 					if hop.bfdstatus != "" && hop.bfdstatus != "Up" {
 						if !slices.Contains(status.FailedChecks, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod", hop.ip, hop.nodeName)) {
 							if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "nobfd"), spec, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
+								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "nobfd"), spec, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
 							}
 							status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod", hop.ip, hop.nodeName))
 							if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnobfd"), fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
+								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnobfd"), fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
 								if err != nil {
 									log.Log.Error(err, "Failed to notify the external system")
 								}
-								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnobfd"))
+								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnobfd"))
 								if err != nil {
 									log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 								}
@@ -852,15 +851,15 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 					if !route.advertised {
 						if !slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s", route.svcname, route.namespace, route.speakPod, route.nodeName)) {
 							if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName)), spec, fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
+								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName)), spec, fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
 							}
 							status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s", route.svcname, route.namespace, route.speakPod, route.nodeName))
 							if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alert"), fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
+								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alert"), fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
 								if err != nil {
 									log.Log.Error(err, "Failed to notify the external system")
 								}
-								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alert"))
+								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alert"))
 								if err != nil {
 									log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 								}
@@ -877,15 +876,15 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 					if !route.validbest {
 						if !slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s doesn't have the best route advertised by speaker pod %s running in node %s", route.svcname, route.namespace, route.speakPod, route.nodeName)) {
 							if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "nonbest"), spec, fmt.Sprintf("Service %s's external IP %s doesn't have the best route advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
+								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "nonbest"), spec, fmt.Sprintf("Service %s's external IP %s doesn't have the best route advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
 							}
 							status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s doesn't have the best route advertised by speaker pod %s running in node %s", route.svcname, route.namespace, route.speakPod, route.nodeName))
 							if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alertnonbest"), fmt.Sprintf("Service %s's external IP %s doesn't have the best route advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
+								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alertnonbest"), fmt.Sprintf("Service %s's external IP %s doesn't have the best route advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
 								if err != nil {
 									log.Log.Error(err, "Failed to notify the external system")
 								}
-								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alertnonbest"))
+								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alertnonbest"))
 								if err != nil {
 									log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 								}
@@ -948,15 +947,15 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 					svc := strings.Split(sv, ":")
 					if !slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s is found with no valid IP in namespace %s", svc[0], svc[1])) {
 						if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-							util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc[0], svc[1], "noip"), spec, fmt.Sprintf("Service %s in namespace %s is found with no valid IP in cluster %s", svc[0], svc[1], runningHost))
+							util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc[0], svc[1], "noip"), spec, fmt.Sprintf("Service %s in namespace %s is found with no valid IP in cluster %s", svc[0], svc[1], runningHost))
 						}
 						status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("Service %s is found with no valid IP in namespace %s", svc[0], svc[1]))
 						if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-							err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc[0], svc[1], "alertnoip"), fmt.Sprintf("Service %s in namespace %s is found with no valid IP in cluster %s", svc[0], svc[1], runningHost))
+							err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc[0], svc[1], "alertnoip"), fmt.Sprintf("Service %s in namespace %s is found with no valid IP in cluster %s", svc[0], svc[1], runningHost))
 							if err != nil {
 								log.Log.Error(err, "Failed to notify the external system")
 							}
-							fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc[0], svc[1], "alertnoip"))
+							fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc[0], svc[1], "alertnoip"))
 							if err != nil {
 								log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 							}
@@ -975,13 +974,13 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 					svc := strings.Split(sv, ":")
 					if slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s is found with no valid IP in namespace %s", svc[0], svc[1])) {
 						if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-							util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc[0], svc[1], "noip"), spec, fmt.Sprintf("Service %s in namespace %s is found with a valid IP in cluster %s", svc[0], svc[1], runningHost))
+							util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc[0], svc[1], "noip"), spec, fmt.Sprintf("Service %s in namespace %s is found with a valid IP in cluster %s", svc[0], svc[1], runningHost))
 						}
 						idx := slices.Index(status.FailedChecks, fmt.Sprintf("Service %s is found with no valid IP in namespace %s", svc[0], svc[1]))
 						status.FailedChecks = deleteMetalElementSlice(status.FailedChecks, idx)
-						os.Remove(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc[0], svc[1], "noip"))
+						os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc[0], svc[1], "noip"))
 						if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-							fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc[0], svc[1], "alertnoip"))
+							fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc[0], svc[1], "alertnoip"))
 							if err != nil {
 								log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 							}
@@ -993,12 +992,12 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 								idx := slices.Index(status.IncidentID, incident)
 								status.IncidentID = deleteMetalElementSlice(status.IncidentID, idx)
 							}
-							err = util.SubNotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc[0], svc[1], "alertnoip"), fmt.Sprintf("Service %s in namespace %s is found with no valid IP in cluster %s", svc[0], svc[1], runningHost))
+							err = util.SubNotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc[0], svc[1], "alertnoip"), fmt.Sprintf("Service %s in namespace %s is found with no valid IP in cluster %s", svc[0], svc[1], runningHost))
 							if err != nil {
 								log.Log.Error(err, "Failed to notify the external system")
 							}
 						}
-						os.Remove(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc[0], svc[1], "alertnoip"))
+						os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc[0], svc[1], "alertnoip"))
 					}
 				}
 			}
@@ -1017,15 +1016,15 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						if !peer.conPool {
 							if !slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s configured in namespace %s is not part of any configured IP pools ", peer.name, peer.namespace)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s.txt", peer.name, "ippool"), spec, fmt.Sprintf("Service %s configured in namespace %s is not part of any configured IP pools in target cluster %s ", peer.name, peer.namespace, runningHost))
+									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", peer.name, "ippool"), spec, fmt.Sprintf("Service %s configured in namespace %s is not part of any configured IP pools in target cluster %s ", peer.name, peer.namespace, runningHost))
 								}
 								status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("Service %s configured in namespace %s is not part of any configured IP pools ", peer.name, peer.namespace))
 								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s.txt", peer.name, "alertippool"), fmt.Sprintf("Service %s configured in namespace %s is not part of any configured IP pools", peer.name, peer.namespace))
+									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", peer.name, "alertippool"), fmt.Sprintf("Service %s configured in namespace %s is not part of any configured IP pools", peer.name, peer.namespace))
 									if err != nil {
 										log.Log.Error(err, "Failed to notify the external system")
 									}
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s.txt", peer.name, "alertippool"))
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s.txt", peer.name, "alertippool"))
 									if err != nil {
 										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 									}
@@ -1041,13 +1040,13 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						} else {
 							if slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s configured in namespace %s is not part of any configured IP pools ", peer.name, peer.namespace)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s.txt", peer.name, "ippool"), spec, fmt.Sprintf("Service %s configured in namespace %s is now part of a configured IP pool %s in target cluster %s ", peer.name, peer.namespace, peer.ippool, runningHost))
+									util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", peer.name, "ippool"), spec, fmt.Sprintf("Service %s configured in namespace %s is now part of a configured IP pool %s in target cluster %s ", peer.name, peer.namespace, peer.ippool, runningHost))
 								}
 								idx := slices.Index(status.FailedChecks, fmt.Sprintf("Service %s configured in namespace %s is not part of any configured IP pools ", peer.name, peer.namespace))
 								status.FailedChecks = deleteMetalElementSlice(status.FailedChecks, idx)
-								os.Remove(fmt.Sprintf("/home/golanguser/%s-%s.txt", peer.name, "ippool"))
+								os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s.txt", peer.name, "ippool"))
 								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s.txt", peer.name, "alertippool"))
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s.txt", peer.name, "alertippool"))
 									if err != nil {
 										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 									}
@@ -1059,11 +1058,11 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 										idx := slices.Index(status.IncidentID, incident)
 										status.IncidentID = deleteMetalElementSlice(status.IncidentID, idx)
 									}
-									err = util.SubNotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s.txt", peer.name, "alertippool"), fmt.Sprintf("Service %s configured in namespace %s is not part of any configured IP pools", peer.name, peer.namespace))
+									err = util.SubNotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", peer.name, "alertippool"), fmt.Sprintf("Service %s configured in namespace %s is not part of any configured IP pools", peer.name, peer.namespace))
 									if err != nil {
 										log.Log.Error(err, "Failed to notify the external system")
 									}
-									os.Remove(fmt.Sprintf("/home/golanguser/%s-%s.txt", peer.name, "alertippool"))
+									os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s.txt", peer.name, "alertippool"))
 								}
 							}
 						}
@@ -1087,15 +1086,15 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						if !ad.advertised {
 							if !slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s.txt", ad.poolname, "advertised"), spec, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1 in cluster %s", ad.svcname, ad.namespace, ad.poolname, runningHost))
+									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "advertised"), spec, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1 in cluster %s", ad.svcname, ad.namespace, ad.poolname, runningHost))
 								}
 								status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname))
 								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s.txt", ad.poolname, "alertadvertised"), fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 which is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname))
+									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "alertadvertised"), fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 which is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname))
 									if err != nil {
 										log.Log.Error(err, "Failed to notify the external system")
 									}
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s.txt", ad.poolname, "alertadvertised"))
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "alertadvertised"))
 									if err != nil {
 										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 									}
@@ -1111,13 +1110,13 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						} else {
 							if slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s.txt", ad.poolname, "advertised"), spec, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is now configured to be advertised bgpadvertisements.metallb.io/v1beta1 in cluster %s", ad.svcname, ad.namespace, ad.poolname, runningHost))
+									util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "advertised"), spec, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is now configured to be advertised bgpadvertisements.metallb.io/v1beta1 in cluster %s", ad.svcname, ad.namespace, ad.poolname, runningHost))
 								}
 								idx := slices.Index(status.FailedChecks, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname))
 								status.FailedChecks = deleteMetalElementSlice(status.FailedChecks, idx)
-								os.Remove(fmt.Sprintf("/home/golanguser/%s-%s.txt", ad.poolname, "advertised"))
+								os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "advertised"))
 								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s.txt", ad.poolname, "alertadvertised"))
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "alertadvertised"))
 									if err != nil {
 										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 									}
@@ -1129,26 +1128,26 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 										idx := slices.Index(status.IncidentID, incident)
 										status.IncidentID = deleteMetalElementSlice(status.IncidentID, idx)
 									}
-									err = util.NotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s.txt", ad.poolname, "alertadvertised"), fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 which is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname))
+									err = util.NotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "alertadvertised"), fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 which is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname))
 									if err != nil {
 										log.Log.Error(err, "Failed to notify the external system")
 									}
-									os.Remove(fmt.Sprintf("/home/golanguser/%s-%s.txt", ad.poolname, "alertadvertised"))
+									os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "alertadvertised"))
 								}
 							}
 						}
 						if ad.peers == nil {
 							if !slices.Contains(status.FailedChecks, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s.txt", ad.advName, "nopeer"), spec, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
+									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "nopeer"), spec, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
 								}
 								status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
 								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s.txt", ad.advName, "alertnopeer"), fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
+									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "alertnopeer"), fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
 									if err != nil {
 										log.Log.Error(err, "Failed to notify the external system")
 									}
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s.txt", ad.advName, "alertnopeer"))
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "alertnopeer"))
 									if err != nil {
 										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 									}
@@ -1165,13 +1164,13 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						} else {
 							if slices.Contains(status.FailedChecks, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s.txt", ad.advName, "nopeer"), spec, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 now has valid peers configured", ad.advName))
+									util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "nopeer"), spec, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 now has valid peers configured", ad.advName))
 								}
 								idx := slices.Index(status.FailedChecks, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
 								status.FailedChecks = deleteMetalElementSlice(status.FailedChecks, idx)
-								os.Remove(fmt.Sprintf("/home/golanguser/%s-%s.txt", ad.advName, "nopeer"))
+								os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "nopeer"))
 								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s.txt", ad.advName, "alertnopeer"))
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "alertnopeer"))
 									if err != nil {
 										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 									}
@@ -1183,11 +1182,11 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 										idx := slices.Index(status.IncidentID, incident)
 										status.IncidentID = deleteMetalElementSlice(status.IncidentID, idx)
 									}
-									err = util.NotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s.txt", ad.advName, "alertnopeer"), fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
+									err = util.NotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "alertnopeer"), fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
 									if err != nil {
 										log.Log.Error(err, "Failed to notify the external system")
 									}
-									os.Remove(fmt.Sprintf("/home/golanguser/%s-%s.txt", ad.advName, "alertnopeer"))
+									os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "alertnopeer"))
 								}
 							}
 						}
@@ -1240,15 +1239,15 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 							if svc.name == lbs {
 								if !slices.Contains(status.FailedChecks, fmt.Sprintf("One of the endpoints of Service %s in namespace %s is not running", svc.name, svc.namespace)) {
 									if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-										util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc.name, svc.namespace, "nonrunningendpoint"), spec, fmt.Sprintf("One of the endpoints of Service %s in namespace %s is not running", svc.name, svc.namespace))
+										util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "nonrunningendpoint"), spec, fmt.Sprintf("One of the endpoints of Service %s in namespace %s is not running", svc.name, svc.namespace))
 									}
 									status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("One of the endpoints of Service %s in namespace %s is not running", svc.name, svc.namespace))
 									if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-										err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc.name, svc.namespace, "alertnonrunningendpoint"), fmt.Sprintf("One of the endpoints of Service %s in namespace %s is not running in cluster", svc.name, svc.namespace, runningHost))
+										err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "alertnonrunningendpoint"), fmt.Sprintf("One of the endpoints of Service %s in namespace %s is not running in cluster", svc.name, svc.namespace, runningHost))
 										if err != nil {
 											log.Log.Error(err, "Failed to notify the external system")
 										}
-										fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc.name, svc.namespace, "alertnonrunningendpoint"))
+										fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "alertnonrunningendpoint"))
 										if err != nil {
 											log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 										}
@@ -1273,13 +1272,13 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						defer wg.Done()
 						if slices.Contains(status.FailedChecks, fmt.Sprintf("One of the endpoints of Service %s in namespace %s is not running", svc.name, svc.namespace)) {
 							if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-								util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc.name, svc.namespace, "nonrunningendpoint"), spec, fmt.Sprintf("All endpoints of Service %s in namespace %s are now running", svc.name, svc.namespace))
+								util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "nonrunningendpoint"), spec, fmt.Sprintf("All endpoints of Service %s in namespace %s are now running", svc.name, svc.namespace))
 							}
 							idx := slices.Index(status.FailedChecks, fmt.Sprintf("One of the endpoints of Service %s in namespace %s is not running", svc.name, svc.namespace))
 							status.FailedChecks = deleteMetalElementSlice(status.FailedChecks, idx)
-							os.Remove(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc.name, svc.namespace, "nonrunningendpoint"))
+							os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "nonrunningendpoint"))
 							if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc.name, svc.namespace, "alertnonrunningendpoint"))
+								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "alertnonrunningendpoint"))
 								if err != nil {
 									log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 								}
@@ -1291,11 +1290,11 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 									idx := slices.Index(status.IncidentID, incident)
 									status.IncidentID = deleteMetalElementSlice(status.IncidentID, idx)
 								}
-								err = util.NotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc.name, svc.namespace, "alertnonrunningendpoint"), fmt.Sprintf("One of the endpoints of Service %s in namespace %s is not running in cluster", svc.name, svc.namespace, runningHost))
+								err = util.NotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "alertnonrunningendpoint"), fmt.Sprintf("One of the endpoints of Service %s in namespace %s is not running in cluster", svc.name, svc.namespace, runningHost))
 								if err != nil {
 									log.Log.Error(err, "Failed to notify the external system")
 								}
-								os.Remove(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc.name, svc.namespace, "alertnonrunningendpoint"))
+								os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "alertnonrunningendpoint"))
 							}
 						}
 					}()
@@ -1309,15 +1308,15 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						if sv == svc.name {
 							if !slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s in namespace %s doesn't have any endpoints/pods", svc.name, svc.namespace)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc.name, svc.namespace, "noendpoint"), spec, fmt.Sprintf("Service %s in namespace %s doesn't have any endpoints/pods in cluster %s", svc.name, svc.namespace, runningHost))
+									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "noendpoint"), spec, fmt.Sprintf("Service %s in namespace %s doesn't have any endpoints/pods in cluster %s", svc.name, svc.namespace, runningHost))
 								}
 								status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("Service %s in namespace %s doesn't have any endpoints/pods", svc.name, svc.namespace))
 								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc.name, svc.namespace, "alertnoendpoint"), fmt.Sprintf("Service %s in namespace %s doesn't have any endpoints/pods in cluster %s", svc.name, svc.namespace, runningHost))
+									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "alertnoendpoint"), fmt.Sprintf("Service %s in namespace %s doesn't have any endpoints/pods in cluster %s", svc.name, svc.namespace, runningHost))
 									if err != nil {
 										log.Log.Error(err, "Failed to notify the external system")
 									}
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc.name, svc.namespace, "alertnoendpoint"))
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "alertnoendpoint"))
 									if err != nil {
 										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 									}
@@ -1340,13 +1339,13 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						defer wg.Done()
 						if slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s in namespace %s doesn't have any endpoints/pods", svc.name, svc.namespace)) {
 							if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-								util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc.name, svc.namespace, "noendpoint"), spec, fmt.Sprintf("Service %s in namespace %s does have endpoints/pods in cluster %s", svc.name, svc.namespace, runningHost))
+								util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "noendpoint"), spec, fmt.Sprintf("Service %s in namespace %s does have endpoints/pods in cluster %s", svc.name, svc.namespace, runningHost))
 							}
 							idx := slices.Index(status.FailedChecks, fmt.Sprintf("Service %s in namespace %s doesn't have any endpoints/pods", svc.name, svc.namespace))
 							status.FailedChecks = deleteMetalElementSlice(status.FailedChecks, idx)
-							os.Remove(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc.name, svc.namespace, "noendpoint"))
+							os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "noendpoint"))
 							if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc.name, svc.namespace, "alertnoendpoint"))
+								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "alertnoendpoint"))
 								if err != nil {
 									log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 								}
@@ -1358,11 +1357,11 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 									idx := slices.Index(status.IncidentID, incident)
 									status.IncidentID = deleteMetalElementSlice(status.IncidentID, idx)
 								}
-								err = util.SubNotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc.name, svc.namespace, "alertnoendpoint"), fmt.Sprintf("Service %s in namespace %s doesn't have any endpoints/pods in cluster %s", svc.name, svc.namespace, runningHost))
+								err = util.SubNotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "alertnoendpoint"), fmt.Sprintf("Service %s in namespace %s doesn't have any endpoints/pods in cluster %s", svc.name, svc.namespace, runningHost))
 								if err != nil {
 									log.Log.Error(err, "Failed to notify the external system")
 								}
-								os.Remove(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", svc.name, svc.namespace, "alertnoendpoint"))
+								os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "alertnoendpoint"))
 							}
 						}
 					}()
@@ -1397,15 +1396,15 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						if hop.established != "Established" {
 							if !slices.Contains(status.FailedChecks, fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod", hop.ip, hop.nodeName)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notestablished"), spec, fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
+									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notestablished"), spec, fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
 								}
 								status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod", hop.ip, hop.nodeName))
 								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotestablished"), fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
+									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotestablished"), fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
 									if err != nil {
 										log.Log.Error(err, "Failed to notify the external system")
 									}
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotestablished"))
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotestablished"))
 									if err != nil {
 										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 									}
@@ -1421,14 +1420,14 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						} else {
 							if slices.Contains(status.FailedChecks, fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod", hop.ip, hop.nodeName)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notestablished"), spec, fmt.Sprintf("BGP neighbor %s connectivity has now been established from worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
+									util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notestablished"), spec, fmt.Sprintf("BGP neighbor %s connectivity has now been established from worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
 								}
 								idx := slices.Index(status.FailedChecks, fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod", hop.ip, hop.nodeName))
 								status.FailedChecks = deleteMetalElementSlice(status.FailedChecks, idx)
-								os.Remove(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notestablished"))
+								os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notestablished"))
 								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
 
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotestablished"))
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotestablished"))
 									if err != nil {
 										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 									}
@@ -1440,7 +1439,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 										idx := slices.Index(status.IncidentID, incident)
 										status.IncidentID = deleteMetalElementSlice(status.IncidentID, idx)
 									}
-									err = util.SubNotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotestablished"), fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
+									err = util.SubNotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotestablished"), fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
 									if err != nil {
 										log.Log.Error(err, "Failed to notify the external system")
 									}
@@ -1450,15 +1449,15 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						if !hop.valid {
 							if !slices.Contains(status.FailedChecks, fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s' speaker pod", hop.ip, hop.nodeName)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notvalid"), spec, fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
+									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notvalid"), spec, fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
 								}
 								status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s' speaker pod", hop.ip, hop.nodeName))
 								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotvalid"), fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
+									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotvalid"), fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
 									if err != nil {
 										log.Log.Error(err, "Failed to notify the external system")
 									}
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotvalid"))
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotvalid"))
 									if err != nil {
 										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 									}
@@ -1474,13 +1473,13 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						} else {
 							if slices.Contains(status.FailedChecks, fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s' speaker pod", hop.ip, hop.nodeName)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notvalid"), spec, fmt.Sprintf("BGP neighbor %s now has a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
+									util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notvalid"), spec, fmt.Sprintf("BGP neighbor %s now has a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
 								}
 								idx := slices.Index(status.FailedChecks, fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s' speaker pod", hop.ip, hop.nodeName))
 								status.FailedChecks = deleteMetalElementSlice(status.FailedChecks, idx)
-								os.Remove(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notvalid"))
+								os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notvalid"))
 								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotvalid"))
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotvalid"))
 									if err != nil {
 										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 									}
@@ -1492,26 +1491,26 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 										idx := slices.Index(status.IncidentID, incident)
 										status.IncidentID = deleteMetalElementSlice(status.IncidentID, idx)
 									}
-									err = util.SubNotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotvalid"), fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
+									err = util.SubNotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotvalid"), fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
 									if err != nil {
 										log.Log.Error(err, "Failed to notify the external system")
 									}
-									os.Remove(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotvalid"))
+									os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotvalid"))
 								}
 							}
 						}
 						if hop.bfdstatus != "" && hop.bfdstatus != "Up" {
 							if !slices.Contains(status.FailedChecks, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod", hop.ip, hop.nodeName)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "nobfd"), spec, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
+									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "nobfd"), spec, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
 								}
 								status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod", hop.ip, hop.nodeName))
 								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnobfd"), fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
+									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnobfd"), fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
 									if err != nil {
 										log.Log.Error(err, "Failed to notify the external system")
 									}
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnobfd"))
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnobfd"))
 									if err != nil {
 										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 									}
@@ -1527,13 +1526,13 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						} else {
 							if slices.Contains(status.FailedChecks, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod", hop.ip, hop.nodeName)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "nobfd"), spec, fmt.Sprintf("BGP neighbor %s's BFD is now up in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
+									util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "nobfd"), spec, fmt.Sprintf("BGP neighbor %s's BFD is now up in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
 								}
 								idx := slices.Index(status.FailedChecks, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod", hop.ip, hop.nodeName))
 								status.FailedChecks = deleteMetalElementSlice(status.FailedChecks, idx)
-								os.Remove(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "nobfd"))
+								os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "nobfd"))
 								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnobfd"))
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnobfd"))
 									if err != nil {
 										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 									}
@@ -1545,11 +1544,11 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 										idx := slices.Index(status.IncidentID, incident)
 										status.IncidentID = deleteMetalElementSlice(status.IncidentID, idx)
 									}
-									err = util.SubNotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnobfd"), fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
+									err = util.SubNotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnobfd"), fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
 									if err != nil {
 										log.Log.Error(err, "Failed to notify the external system")
 									}
-									os.Remove(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnobfd"))
+									os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnobfd"))
 								}
 							}
 						}
@@ -1585,15 +1584,15 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						if !route.advertised {
 							if !slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s", route.svcname, route.namespace, route.speakPod, route.nodeName)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName)), spec, fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
+									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName)), spec, fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
 								}
 								status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s", route.svcname, route.namespace, route.speakPod, route.nodeName))
 								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alert"), fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
+									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alert"), fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
 									if err != nil {
 										log.Log.Error(err, "Failed to notify the external system")
 									}
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alert"))
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alert"))
 									if err != nil {
 										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 									}
@@ -1609,13 +1608,13 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						} else {
 							if slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s", route.svcname, route.namespace, route.speakPod, route.nodeName)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName)), spec, fmt.Sprintf("Service %s's external IP %s is now advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
+									util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName)), spec, fmt.Sprintf("Service %s's external IP %s is now advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
 								}
 								idx := slices.Index(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s", route.svcname, route.namespace, route.speakPod, route.nodeName))
 								status.FailedChecks = deleteMetalElementSlice(status.FailedChecks, idx)
-								os.Remove(fmt.Sprintf("/home/golanguser/%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName)))
+								os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName)))
 								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alert"))
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alert"))
 									if err != nil {
 										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 									}
@@ -1627,11 +1626,11 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 										idx := slices.Index(status.IncidentID, incident)
 										status.IncidentID = deleteMetalElementSlice(status.IncidentID, idx)
 									}
-									err = util.SubNotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alert"), fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
+									err = util.SubNotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alert"), fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
 									if err != nil {
 										log.Log.Error(err, "Failed to notify the external system")
 									}
-									os.Remove(fmt.Sprintf("/home/golanguser/%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alert"))
+									os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alert"))
 								}
 
 							}
@@ -1639,15 +1638,15 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						if !route.validbest {
 							if !slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s doesn't have the best route advertised by speaker pod %s running in node %s", route.svcname, route.namespace, route.speakPod, route.nodeName)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "nonbest"), spec, fmt.Sprintf("Service %s's external IP %s doesn't have the best route advertised by speaker pod %s running in node %s in cluster %s, current status %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost, route.status))
+									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "nonbest"), spec, fmt.Sprintf("Service %s's external IP %s doesn't have the best route advertised by speaker pod %s running in node %s in cluster %s, current status %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost, route.status))
 								}
 								status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s doesn't have the best route advertised by speaker pod %s running in node %s", route.svcname, route.namespace, route.speakPod, route.nodeName))
 								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alertnonbest"), fmt.Sprintf("Service %s's external IP %s doesn't have the best route advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
+									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alertnonbest"), fmt.Sprintf("Service %s's external IP %s doesn't have the best route advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
 									if err != nil {
 										log.Log.Error(err, "Failed to notify the external system")
 									}
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alertnonbest"))
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alertnonbest"))
 									if err != nil {
 										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 									}
@@ -1663,13 +1662,13 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						} else {
 							if slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s doesn't have the best route advertised by speaker pod %s running in node %s", route.svcname, route.namespace, route.speakPod, route.nodeName)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "nonbest"), spec, fmt.Sprintf("Service %s's external IP %s doesn't have the best route advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
+									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "nonbest"), spec, fmt.Sprintf("Service %s's external IP %s doesn't have the best route advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
 								}
 								idx := slices.Index(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s doesn't have the best route advertised by speaker pod %s running in node %s", route.svcname, route.namespace, route.speakPod, route.nodeName))
 								status.FailedChecks = deleteMetalElementSlice(status.FailedChecks, idx)
-								os.Remove(fmt.Sprintf("/home/golanguser/%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "nonbest"))
+								os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "nonbest"))
 								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alertnonbest"))
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alertnonbest"))
 									if err != nil {
 										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
 									}
@@ -1681,11 +1680,11 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 										idx := slices.Index(status.IncidentID, incident)
 										status.IncidentID = deleteMetalElementSlice(status.IncidentID, idx)
 									}
-									err = util.SubNotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alertnonbest"), fmt.Sprintf("Service %s's external IP %s doesn't have the best route advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
+									err = util.SubNotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alertnonbest"), fmt.Sprintf("Service %s's external IP %s doesn't have the best route advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
 									if err != nil {
 										log.Log.Error(err, "Failed to notify the external system")
 									}
-									os.Remove(fmt.Sprintf("/home/golanguser/%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alertnonbest"))
+									os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alertnonbest"))
 								}
 							}
 						}

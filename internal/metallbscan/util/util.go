@@ -212,7 +212,6 @@ func SetIncidentID(spec *v1alpha1.MetallbScanSpec, username string, password str
 		Timeout: 5 * time.Second,
 	}
 	req, err := http.NewRequest("GET", getUrl, nil)
-	fmt.Println(req)
 	if err != nil {
 		return "", err
 	}
