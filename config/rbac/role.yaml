@@ -15,6 +15,22 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - events
+  verbs:
+  - create
+  - get
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - nodes
   verbs:
   - get
@@ -25,16 +41,64 @@ rules:
   resources:
   - pods
   verbs:
+  - create
   - get
   - list
   - watch
 - apiGroups:
   - ""
   resources:
-  - events
+  - pods/attach
   verbs:
   - create
-  - patch
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods/exec
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods/log
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods/portforward
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods/proxy
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods/status
+  verbs:
+  - create
+  - get
+  - list
+  - watch
 - apiGroups:
   - ""
   resources:
@@ -44,21 +108,47 @@ rules:
   - list
   - watch
 - apiGroups:
-  - ""
+  - metallb.io/v1beta1
   resources:
-  - namespaces
+  - bgpadvertisements
   verbs:
   - get
   - list
   - watch
 - apiGroups:
-  - kubevirt.io
+  - metallb.io/v1beta1
   resources:
-  - virtualmachineinstances
+  - ipaddresspools
   verbs:
   - get
   - list
   - watch
+- apiGroups:
+  - monitoring.spark.co.nz
+  resources:
+  - metallbscans
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - monitoring.spark.co.nz
+  resources:
+  - metallbscans/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - monitoring.spark.co.nz
+  resources:
+  - metallbscans/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - monitoring.spark.co.nz
   resources:
@@ -106,34 +196,10 @@ rules:
   - patch
   - update
 - apiGroups:
-  - monitoring.spark.co.nz
+  - openshift.io/v1
   resources:
-  - containerscans
+  - machineconfigpools
   verbs:
-  - create
-  - delete
   - get
   - list
-  - patch
-  - update
   - watch
-- apiGroups:
-  - monitoring.spark.co.nz
-  resources:
-  - containerscans/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - monitoring.spark.co.nz
-  resources:
-  - containerscans/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - monitoring.spark.co.nz
-  resources:
-  - portscans/finalizers
-  verbs:
-  - update
