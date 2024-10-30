@@ -1,4 +1,4 @@
-package metallbutil
+package util
 
 import (
 	"bytes"
