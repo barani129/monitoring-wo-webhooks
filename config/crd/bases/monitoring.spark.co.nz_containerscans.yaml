@@ -162,10 +162,6 @@ spec:
                   is notified
                 format: date-time
                 type: string
-              healthy:
-                description: Indicates if all metallb checks are completely error
-                  free
-                type: boolean
               incidentID:
                 description: Incident ID from the rem. Spark specific
                 items:
