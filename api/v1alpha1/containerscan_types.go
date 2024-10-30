@@ -84,10 +84,6 @@ type ContainerScanStatus struct {
 	// +optional
 	Conditions []ContainerScanCondition `json:"conditions,omitempty"`
 
-	// Indicates if all metallb checks are completely error free
-	// +optional
-	Healthy bool `json:"healthy,omitempty"`
-
 	// last successful timestamp of retrieved cluster status
 	// +optional
 	LastRunTime *metav1.Time `json:"lastRunTime,omitempty"`
