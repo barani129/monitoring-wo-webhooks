@@ -46,7 +46,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	monitoringv1alpha1 "github.com/barani129/monitoring-wo-webhooks/api/v1alpha1"
-	"github.com/barani129/monitoring-wo-webhooks/internal/metallbscan/util"
+	util "github.com/barani129/monitoring-wo-webhooks/internal/metallbscan/util"
 )
 
 // MetallbScanReconciler reconciles a MetallbScan object
