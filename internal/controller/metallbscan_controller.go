@@ -1787,29 +1787,32 @@ func GetBGPIPPoolsPeer(clientset kubernetes.Clientset, loadbalancersvc []string,
 func GetBGPIPAd(clientset kubernetes.Clientset, bgppeer []BGPPeer, metalnamespace string) ([]BGPAd, error) {
 	var bgppeerad []BGPAd
 	for _, bgp := range bgppeer {
-		contains, advname, peers, err := checkBgpAdvertisment(clientset, metalnamespace, bgp.poolname)
-		if err != nil {
-			return nil, err
+		if bgp.poolname != "" || bgp.ippool != "" {
+			contains, advname, peers, err := checkBgpAdvertisment(clientset, metalnamespace, bgp.poolname)
+			if err != nil {
+				return nil, err
+			}
+			if !contains {
+				bgppeerad = append(bgppeerad, BGPAd{
+					svcname:    bgp.name,
+					namespace:  bgp.namespace,
+					poolname:   bgp.poolname,
+					advertised: false,
+					advName:    "",
+					peers:      nil,
+				})
+			} else {
+				bgppeerad = append(bgppeerad, BGPAd{
+					svcname:    bgp.name,
+					namespace:  bgp.namespace,
+					poolname:   bgp.poolname,
+					advertised: true,
+					advName:    advname,
+					peers:      peers,
+				})
+			}
 		}
-		if !contains {
-			bgppeerad = append(bgppeerad, BGPAd{
-				svcname:    bgp.name,
-				namespace:  bgp.namespace,
-				poolname:   bgp.poolname,
-				advertised: false,
-				advName:    "",
-				peers:      nil,
-			})
-		} else {
-			bgppeerad = append(bgppeerad, BGPAd{
-				svcname:    bgp.name,
-				namespace:  bgp.namespace,
-				poolname:   bgp.poolname,
-				advertised: true,
-				advName:    advname,
-				peers:      peers,
-			})
-		}
+
 	}
 	return bgppeerad, nil
 }
