@@ -567,52 +567,54 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			for _, ad := range bgpAd {
 				go func() {
 					defer wg.Done()
-					if !ad.advertised {
-						if !slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname)) {
-							if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "advertised"), spec, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1 in cluster %s", ad.svcname, ad.namespace, ad.poolname, runningHost))
-							}
-							status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname))
-							if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "alertadvertised"), fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 which is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname))
-								if err != nil {
-									log.Log.Error(err, "Failed to notify the external system")
+					if ad.advName != "" {
+						if !ad.advertised {
+							if !slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname)) {
+								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "advertised"), spec, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1 in cluster %s", ad.svcname, ad.namespace, ad.poolname, runningHost))
 								}
-								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "alertadvertised"))
-								if err != nil {
-									log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
-								}
-								incident, err := util.SetIncidentID(spec, string(username), string(password), fingerprint)
-								if err != nil || incident == "" {
-									log.Log.Info("Failed to update the incident ID, either incident is getting created or other issues.")
-								}
-								if !slices.Contains(status.IncidentID, incident) && incident != "" && incident != "[Pending]" {
-									status.IncidentID = append(status.IncidentID, incident)
+								status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname))
+								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
+									err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "alertadvertised"), fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 which is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname))
+									if err != nil {
+										log.Log.Error(err, "Failed to notify the external system")
+									}
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "alertadvertised"))
+									if err != nil {
+										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
+									}
+									incident, err := util.SetIncidentID(spec, string(username), string(password), fingerprint)
+									if err != nil || incident == "" {
+										log.Log.Info("Failed to update the incident ID, either incident is getting created or other issues.")
+									}
+									if !slices.Contains(status.IncidentID, incident) && incident != "" && incident != "[Pending]" {
+										status.IncidentID = append(status.IncidentID, incident)
+									}
 								}
 							}
 						}
-					}
-					if ad.peers == nil {
-						if !slices.Contains(status.FailedChecks, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName)) {
-							if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "nopeer"), spec, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
-							}
-							status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
-							if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "alertnopeer"), fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
-								if err != nil {
-									log.Log.Error(err, "Failed to notify the external system")
+						if ad.peers == nil {
+							if !slices.Contains(status.FailedChecks, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName)) {
+								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "nopeer"), spec, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
 								}
-								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "alertnopeer"))
-								if err != nil {
-									log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
-								}
-								incident, err := util.SetIncidentID(spec, string(username), string(password), fingerprint)
-								if err != nil || incident == "" {
-									log.Log.Info("Failed to update the incident ID, either incident is getting created or other issues.")
-								}
-								if !slices.Contains(status.IncidentID, incident) && incident != "" && incident != "[Pending]" {
-									status.IncidentID = append(status.IncidentID, incident)
+								status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
+								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
+									err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "alertnopeer"), fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
+									if err != nil {
+										log.Log.Error(err, "Failed to notify the external system")
+									}
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "alertnopeer"))
+									if err != nil {
+										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
+									}
+									incident, err := util.SetIncidentID(spec, string(username), string(password), fingerprint)
+									if err != nil || incident == "" {
+										log.Log.Info("Failed to update the incident ID, either incident is getting created or other issues.")
+									}
+									if !slices.Contains(status.IncidentID, incident) && incident != "" && incident != "[Pending]" {
+										status.IncidentID = append(status.IncidentID, incident)
+									}
 								}
 							}
 						}
@@ -1083,110 +1085,112 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				for _, ad := range bgpAd {
 					go func() {
 						defer wg.Done()
-						if !ad.advertised {
-							if !slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname)) {
-								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "advertised"), spec, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1 in cluster %s", ad.svcname, ad.namespace, ad.poolname, runningHost))
+						if ad.advName != "" {
+							if !ad.advertised {
+								if !slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname)) {
+									if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+										util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "advertised"), spec, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1 in cluster %s", ad.svcname, ad.namespace, ad.poolname, runningHost))
+									}
+									status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname))
+									if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
+										err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "alertadvertised"), fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 which is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname))
+										if err != nil {
+											log.Log.Error(err, "Failed to notify the external system")
+										}
+										fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "alertadvertised"))
+										if err != nil {
+											log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
+										}
+										incident, err := util.SetIncidentID(spec, string(username), string(password), fingerprint)
+										if err != nil || incident == "" {
+											log.Log.Info("Failed to update the incident ID, either incident is getting created or other issues.")
+										}
+										if !slices.Contains(status.IncidentID, incident) && incident != "" && incident != "[Pending]" {
+											status.IncidentID = append(status.IncidentID, incident)
+										}
+									}
 								}
-								status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname))
-								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "alertadvertised"), fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 which is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname))
-									if err != nil {
-										log.Log.Error(err, "Failed to notify the external system")
+							} else {
+								if slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname)) {
+									if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+										util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "advertised"), spec, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is now configured to be advertised bgpadvertisements.metallb.io/v1beta1 in cluster %s", ad.svcname, ad.namespace, ad.poolname, runningHost))
 									}
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "alertadvertised"))
-									if err != nil {
-										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
-									}
-									incident, err := util.SetIncidentID(spec, string(username), string(password), fingerprint)
-									if err != nil || incident == "" {
-										log.Log.Info("Failed to update the incident ID, either incident is getting created or other issues.")
-									}
-									if !slices.Contains(status.IncidentID, incident) && incident != "" && incident != "[Pending]" {
-										status.IncidentID = append(status.IncidentID, incident)
+									idx := slices.Index(status.FailedChecks, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname))
+									status.FailedChecks = deleteMetalElementSlice(status.FailedChecks, idx)
+									os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "advertised"))
+									if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
+										fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "alertadvertised"))
+										if err != nil {
+											log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
+										}
+										incident, err := util.SetIncidentID(spec, string(username), string(password), fingerprint)
+										if err != nil || incident == "" {
+											log.Log.Info("Failed to update the incident ID, either incident is getting created or other issues.")
+										}
+										if slices.Contains(status.IncidentID, incident) && incident != "" && incident != "[Pending]" {
+											idx := slices.Index(status.IncidentID, incident)
+											status.IncidentID = deleteMetalElementSlice(status.IncidentID, idx)
+										}
+										err = util.NotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "alertadvertised"), fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 which is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname))
+										if err != nil {
+											log.Log.Error(err, "Failed to notify the external system")
+										}
+										os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "alertadvertised"))
 									}
 								}
 							}
-						} else {
-							if slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname)) {
-								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "advertised"), spec, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is now configured to be advertised bgpadvertisements.metallb.io/v1beta1 in cluster %s", ad.svcname, ad.namespace, ad.poolname, runningHost))
-								}
-								idx := slices.Index(status.FailedChecks, fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname))
-								status.FailedChecks = deleteMetalElementSlice(status.FailedChecks, idx)
-								os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "advertised"))
-								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "alertadvertised"))
-									if err != nil {
-										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
+							if ad.peers == nil {
+								if !slices.Contains(status.FailedChecks, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName)) {
+									if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+										util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "nopeer"), spec, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
 									}
-									incident, err := util.SetIncidentID(spec, string(username), string(password), fingerprint)
-									if err != nil || incident == "" {
-										log.Log.Info("Failed to update the incident ID, either incident is getting created or other issues.")
+									status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
+									if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
+										err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "alertnopeer"), fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
+										if err != nil {
+											log.Log.Error(err, "Failed to notify the external system")
+										}
+										fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "alertnopeer"))
+										if err != nil {
+											log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
+										}
+										incident, err := util.SetIncidentID(spec, string(username), string(password), fingerprint)
+										if err != nil || incident == "" {
+											log.Log.Info("Failed to update the incident ID, either incident is getting created or other issues.")
+										}
+										if !slices.Contains(status.IncidentID, incident) && incident != "" && incident != "[Pending]" {
+											status.IncidentID = append(status.IncidentID, incident)
+										}
 									}
-									if slices.Contains(status.IncidentID, incident) && incident != "" && incident != "[Pending]" {
-										idx := slices.Index(status.IncidentID, incident)
-										status.IncidentID = deleteMetalElementSlice(status.IncidentID, idx)
-									}
-									err = util.NotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "alertadvertised"), fmt.Sprintf("Service %s's in namespace %s is part of IP pool %s ipaddresspools.metallb.io/v1beta1 which is not configured to be advertised bgpadvertisements.metallb.io/v1beta1", ad.svcname, ad.namespace, ad.poolname))
-									if err != nil {
-										log.Log.Error(err, "Failed to notify the external system")
-									}
-									os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.poolname, "alertadvertised"))
-								}
-							}
-						}
-						if ad.peers == nil {
-							if !slices.Contains(status.FailedChecks, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName)) {
-								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "nopeer"), spec, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
-								}
-								status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
-								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "alertnopeer"), fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
-									if err != nil {
-										log.Log.Error(err, "Failed to notify the external system")
-									}
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "alertnopeer"))
-									if err != nil {
-										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
-									}
-									incident, err := util.SetIncidentID(spec, string(username), string(password), fingerprint)
-									if err != nil || incident == "" {
-										log.Log.Info("Failed to update the incident ID, either incident is getting created or other issues.")
-									}
-									if !slices.Contains(status.IncidentID, incident) && incident != "" && incident != "[Pending]" {
-										status.IncidentID = append(status.IncidentID, incident)
-									}
-								}
 
-							}
-						} else {
-							if slices.Contains(status.FailedChecks, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName)) {
-								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "nopeer"), spec, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 now has valid peers configured", ad.advName))
 								}
-								idx := slices.Index(status.FailedChecks, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
-								status.FailedChecks = deleteMetalElementSlice(status.FailedChecks, idx)
-								os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "nopeer"))
-								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "alertnopeer"))
-									if err != nil {
-										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
+							} else {
+								if slices.Contains(status.FailedChecks, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName)) {
+									if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+										util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "nopeer"), spec, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 now has valid peers configured", ad.advName))
 									}
-									incident, err := util.SetIncidentID(spec, string(username), string(password), fingerprint)
-									if err != nil || incident == "" {
-										log.Log.Info("Failed to update the incident ID, either incident is getting created or other issues.")
+									idx := slices.Index(status.FailedChecks, fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
+									status.FailedChecks = deleteMetalElementSlice(status.FailedChecks, idx)
+									os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "nopeer"))
+									if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
+										fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "alertnopeer"))
+										if err != nil {
+											log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
+										}
+										incident, err := util.SetIncidentID(spec, string(username), string(password), fingerprint)
+										if err != nil || incident == "" {
+											log.Log.Info("Failed to update the incident ID, either incident is getting created or other issues.")
+										}
+										if slices.Contains(status.IncidentID, incident) && incident != "" && incident != "[Pending]" {
+											idx := slices.Index(status.IncidentID, incident)
+											status.IncidentID = deleteMetalElementSlice(status.IncidentID, idx)
+										}
+										err = util.NotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "alertnopeer"), fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
+										if err != nil {
+											log.Log.Error(err, "Failed to notify the external system")
+										}
+										os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "alertnopeer"))
 									}
-									if slices.Contains(status.IncidentID, incident) && incident != "" && incident != "[Pending]" {
-										idx := slices.Index(status.IncidentID, incident)
-										status.IncidentID = deleteMetalElementSlice(status.IncidentID, idx)
-									}
-									err = util.NotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "alertnopeer"), fmt.Sprintf("BGP IP advertisement %s bgpadvertisements.metallb.io/v1beta1 doesn't have any valid peers configured", ad.advName))
-									if err != nil {
-										log.Log.Error(err, "Failed to notify the external system")
-									}
-									os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ad.advName, "alertnopeer"))
 								}
 							}
 						}
@@ -1817,6 +1821,21 @@ func GetBGPIPAd(clientset kubernetes.Clientset, bgppeer []BGPPeer, metalnamespac
 	return bgppeerad, nil
 }
 
+func getIPAddressPoolLabels(clientset kubernetes.Clientset, poolname string, namespace string) (map[string]string, error) {
+	ippoolList := metal1.IPAddressPoolList{}
+	err := clientset.RESTClient().Get().AbsPath(fmt.Sprintf("/apis/metallb.io/v1beta1/namespaces/%s/ipaddresspools", namespace)).Do(context.Background()).Into(&ippoolList)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, pool := range ippoolList.Items {
+		if poolname == pool.Name {
+			return pool.Labels, nil
+		}
+	}
+	return nil, nil
+}
+
 func checkBgpAdvertisment(clientset kubernetes.Clientset, namespace string, pool string) (bool, string, []string, error) {
 	advList := metal1.BGPAdvertisementList{}
 	err := clientset.RESTClient().Get().AbsPath(fmt.Sprintf("/apis/metallb.io/v1beta1/namespaces/%s/bgpadvertisements", namespace)).Do(context.Background()).Into(&advList)
@@ -1826,6 +1845,20 @@ func checkBgpAdvertisment(clientset kubernetes.Clientset, namespace string, pool
 	for _, adv := range advList.Items {
 		if slices.Contains(adv.Spec.IPAddressPools, pool) {
 			return true, adv.Name, adv.Spec.Peers, nil
+		} else {
+			label, err := getIPAddressPoolLabels(clientset, pool, namespace)
+			if err != nil || label == nil {
+				return false, "", nil, err
+			}
+			for _, lab := range adv.Spec.IPAddressPoolSelectors {
+				for k1, v1 := range label {
+					for k, v := range lab.MatchLabels {
+						if k1 == k && v1 == v {
+							return true, adv.Name, adv.Spec.Peers, nil
+						}
+					}
+				}
+			}
 		}
 	}
 	return false, "", nil, nil
