@@ -180,6 +180,14 @@ rules:
 - apiGroups:
   - monitoring.spark.co.nz
   resources:
+  - portscans/finalizers
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - monitoring.spark.co.nz
+  resources:
   - portscans/status
   verbs:
   - get
