@@ -357,7 +357,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	var username []byte
 	var password []byte
 	var data map[string]string
-	if *spec.NotifyExtenal {
+	if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
 		if err := r.Get(ctx, secretName, &secret); err != nil {
 			return ctrl.Result{}, fmt.Errorf("%w, secret name: %s, reason: %v", errGetAuthSecret, secretName, err)
 		}
@@ -365,7 +365,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		password = secret.Data["password"]
 	}
 
-	if *spec.NotifyExtenal {
+	if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
 		if err := r.Get(ctx, configmapName, &configmap); err != nil {
 			return ctrl.Result{}, fmt.Errorf("%w, configmap name: %s, reason: %v", errGetAuthConfigMap, configmapName, err)
 		}

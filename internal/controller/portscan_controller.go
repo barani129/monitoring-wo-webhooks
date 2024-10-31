@@ -49,6 +49,7 @@ type PortScanReconciler struct {
 
 //+kubebuilder:rbac:groups=monitoring.spark.co.nz,resources=portscans,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=monitoring.spark.co.nz,resources=portscans/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=monitoring.spark.co.nz,resources=portscans/finalizers,verbs=get;update;patch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
