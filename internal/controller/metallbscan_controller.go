@@ -841,7 +841,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 
 		log.Log.Info("Checking if loadbalancer type service's external IP is advertised by speaker pods where endpoints are running")
-		bgpRoute, err := GetBGPIPRoute(r, *clientset, metallbNamespace, speakerSelector, lbService)
+		bgpRoute, err := GetBGPIPRoute(r, *clientset, metallbNamespace, speakerSelector, lbService, spec)
 		if err != nil {
 			log.Log.Error(err, "problem with retrieving BGP routes")
 		}
@@ -1576,7 +1576,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 
 			log.Log.Info("Checking if loadbalancer type service's external IP is advertised by speaker pods where endpoints are running")
-			bgpRoute, err := GetBGPIPRoute(r, *clientset, metallbNamespace, speakerSelector, lbService)
+			bgpRoute, err := GetBGPIPRoute(r, *clientset, metallbNamespace, speakerSelector, lbService, spec)
 			if err != nil {
 				log.Log.Error(err, "problem with retrieving BGP routes")
 			}
@@ -1956,17 +1956,20 @@ func GetSvcEndPoints(clientset kubernetes.Clientset, loadbalancersvc []string) (
 	return lbservice, nil
 }
 
-func GetBGPIPRoute(r *MetallbScanReconciler, clientset kubernetes.Clientset, metalnamespace string, speakerSelector v1.LabelSelector, lbservice []LBService) ([]BGPRoute, error) {
+func GetBGPIPRoute(r *MetallbScanReconciler, clientset kubernetes.Clientset, metalnamespace string, speakerSelector v1.LabelSelector, lbservice []LBService, spec *monitoringv1alpha1.MetallbScanSpec) ([]BGPRoute, error) {
 	var bgproute []BGPRoute
 	for _, sv := range lbservice {
 		for _, node := range sv.epNode {
 			podCount, pods, err := util.GetpodsFromNodeBasedonLabels(clientset, *node, metalnamespace, speakerSelector)
 			if err != nil {
-				return nil, err
+				log.Log.Error(err, fmt.Sprintf("unable to get pods from node %s", *node))
+
 			}
 			if podCount < 1 {
-				return nil, fmt.Errorf(fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace))
+				log.Log.Error(err, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace))
+				util.SendEmailAlert(*node, fmt.Sprintf("/home/golanguser/.%s.%s.txt", *node, "norunningspeaker"), spec, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace))
 			} else {
+				util.SendEmailRecoveredAlert(*node, fmt.Sprintf("/home/golanguser/.%s.%s.txt", *node, "norunningspeaker"), spec, fmt.Sprintf("speaker pod found in running status in node %s in namespace %s", *node, metalnamespace))
 				outFile, err := os.OpenFile(fmt.Sprintf("/home/golanguser/.%s-bgpoutput.txt", pods[0]), os.O_CREATE|os.O_RDWR, 0644)
 				if err != nil {
 					return nil, err
@@ -2011,9 +2014,10 @@ func CheckBGPHopWorkers(r *MetallbScanReconciler, clientset kubernetes.Clientset
 		}
 		if podCount < 1 {
 			log.Log.Info(fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", node.Name, metalnamespace))
-			util.SendEmailAlert(node.Name, fmt.Sprintf("/home/golanguser/.%s.%s.txt", node.Name, "nospeaker"), spec, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s, this is expected in 5G clusters", node.Name, metalnamespace))
+			util.SendEmailAlert(node.Name, fmt.Sprintf("/home/golanguser/.%s.%s.txt", node.Name, "nospeaker"), spec, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s, this is expected in 5G clusters nodes with role ht25gb, please check the nodename", node.Name, metalnamespace))
 			// return nil, fmt.Errorf(fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", node.Name, metalnamespace))
 		} else {
+			util.SendEmailRecoveredAlert(node.Name, fmt.Sprintf("/home/golanguser/.%s.%s.txt", node.Name, "nospeaker"), spec, fmt.Sprintf("speaker pod found in running status in node %s in namespace %s", node.Name, metalnamespace))
 			outFile, err := os.OpenFile(fmt.Sprintf("/home/golanguser/.%s-bgphop.txt", pods[0]), os.O_CREATE|os.O_RDWR, 0644)
 			if err != nil {
 				return nil, err
