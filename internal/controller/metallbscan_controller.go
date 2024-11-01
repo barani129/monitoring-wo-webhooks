@@ -737,9 +737,9 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			return ctrl.Result{}, err
 		}
 		log.Log.Info("Checking BGP next hop status from each worker's speaker pods")
-		bgpHop, err := CheckBGPHopWorkers(r, *clientset, metallbNamespace, nodeSelector, speakerSelector)
+		bgpHop, err := CheckBGPHopWorkers(r, *clientset, metallbNamespace, nodeSelector, speakerSelector, spec)
 		if err != nil {
-			log.Log.Error(err, "unable to retrieve BGP next hop status")
+			log.Log.Info("unable to retrieve BGP next hop status")
 		}
 		if len(bgpHop) > 0 {
 			wg.Add(len(bgpHop))
@@ -1388,7 +1388,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 
 			log.Log.Info("Checking BGP next hop status from each worker's speaker pods")
-			bgpHop, err := CheckBGPHopWorkers(r, *clientset, metallbNamespace, nodeSelector, speakerSelector)
+			bgpHop, err := CheckBGPHopWorkers(r, *clientset, metallbNamespace, nodeSelector, speakerSelector, spec)
 			if err != nil {
 				log.Log.Error(err, "unable to retrieve BGP next hop status")
 			}
@@ -1728,6 +1728,7 @@ func checkIpPool(clientset kubernetes.Clientset, namespace string, externalIP st
 	ippoolList := metal1.IPAddressPoolList{}
 	ranger := cidrranger.NewPCTrieRanger()
 	var ippools []string
+	var indeIPs []string
 	err := clientset.RESTClient().Get().AbsPath(fmt.Sprintf("/apis/metallb.io/v1beta1/namespaces/%s/ipaddresspools", namespace)).Do(context.Background()).Into(&ippoolList)
 	if err != nil {
 		return false, "", "", err
@@ -1735,12 +1736,28 @@ func checkIpPool(clientset kubernetes.Clientset, namespace string, externalIP st
 	for _, pool := range ippoolList.Items {
 		for _, add := range pool.Spec.Addresses {
 			if add != "" {
-				ippools = append(ippools, pool.Name+":"+add)
+				if !strings.Contains(add, "/") {
+					if strings.Contains(add, "-") {
+						inIP := strings.SplitN(add, "-", 2)
+						indeIPs = append(indeIPs, pool.Name+":"+inIP[0])
+						indeIPs = append(indeIPs, pool.Name+":"+inIP[1])
+					} else {
+						indeIPs = append(indeIPs, pool.Name+":"+add)
+					}
+				} else {
+					ippools = append(ippools, pool.Name+":"+add)
+				}
 			}
 		}
 	}
-	if len(ippools) < 1 {
+	if len(ippools) < 1 && len(indeIPs) < 1 {
 		return false, "", "", fmt.Errorf("no valid bgp IP pools found")
+	}
+	for _, ip := range indeIPs {
+		ips := strings.Split(ip, ":")
+		if externalIP == ips[1] {
+			return true, ips[0], ips[1], nil
+		}
 	}
 	for _, ips := range ippools {
 		ip := strings.Split(ips, ":")
@@ -1754,9 +1771,7 @@ func checkIpPool(clientset kubernetes.Clientset, namespace string, externalIP st
 			return true, ip[0], ip[1], nil
 		}
 	}
-
 	return false, "", "", nil
-
 }
 
 func GetBGPIPPoolsPeer(clientset kubernetes.Clientset, loadbalancersvc []string, metallbnamespace string) ([]BGPPeer, error) {
@@ -1980,7 +1995,7 @@ func GetBGPIPRoute(r *MetallbScanReconciler, clientset kubernetes.Clientset, met
 	return bgproute, nil
 }
 
-func CheckBGPHopWorkers(r *MetallbScanReconciler, clientset kubernetes.Clientset, metalnamespace string, nodeSelector v1.LabelSelector, speakerSelector v1.LabelSelector) ([]BGPHop, error) {
+func CheckBGPHopWorkers(r *MetallbScanReconciler, clientset kubernetes.Clientset, metalnamespace string, nodeSelector v1.LabelSelector, speakerSelector v1.LabelSelector, spec *monitoringv1alpha1.MetallbScanSpec) ([]BGPHop, error) {
 	var bgphops []BGPHop
 	nodeList, err := clientset.CoreV1().Nodes().List(context.Background(), v1.ListOptions{
 		LabelSelector: labels.Set(nodeSelector.MatchLabels).String(),
@@ -1995,7 +2010,9 @@ func CheckBGPHopWorkers(r *MetallbScanReconciler, clientset kubernetes.Clientset
 			return nil, err
 		}
 		if podCount < 1 {
-			return nil, fmt.Errorf(fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", node.Name, metalnamespace))
+			log.Log.Info(fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", node.Name, metalnamespace))
+			util.SendEmailAlert(node.Name, fmt.Sprintf("/home/golanguser/.%s.%s.txt", node.Name, "nospeaker"), spec, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s, this is expected in 5G clusters", node.Name, metalnamespace))
+			// return nil, fmt.Errorf(fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", node.Name, metalnamespace))
 		} else {
 			outFile, err := os.OpenFile(fmt.Sprintf("/home/golanguser/.%s-bgphop.txt", pods[0]), os.O_CREATE|os.O_RDWR, 0644)
 			if err != nil {
@@ -2033,7 +2050,8 @@ func CheckBGPHopWorkers(r *MetallbScanReconciler, clientset kubernetes.Clientset
 					}
 				}
 			} else {
-				return nil, fmt.Errorf(fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name))
+				log.Log.Info(fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name))
+				util.SendEmailAlert(node.Name, fmt.Sprintf("/home/golanguser/.%s.%s.txt", node.Name, "nobgphopsspeaker"), spec, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name))
 			}
 		}
 	}
