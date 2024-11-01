@@ -2028,6 +2028,7 @@ func CheckBGPHopWorkers(r *MetallbScanReconciler, clientset kubernetes.Clientset
 				return nil, err
 			}
 			if len(hops) != 0 {
+				util.SendEmailRecoveredAlert(node.Name, fmt.Sprintf("/home/golanguser/.%s.%s.txt", node.Name, "nobgphopsspeaker"), spec, fmt.Sprintf("hops are found in speaker pod %s running in node %s", pods[0], node.Name))
 				for _, hopv := range hops {
 					hop := strings.Split(hopv, ":")
 					jsonHop := fmt.Sprintf("show ip bgp neighbor %s json", hop[0])
