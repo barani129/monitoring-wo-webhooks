@@ -737,9 +737,9 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			return ctrl.Result{}, err
 		}
 		log.Log.Info("Checking BGP next hop status from each worker's speaker pods")
-		bgpHop, err := CheckBGPHopWorkers(r, *clientset, metallbNamespace, nodeSelector, speakerSelector, spec)
+		bgpHop, err := CheckBGPHopWorkers(r, *clientset, metallbNamespace, nodeSelector, speakerSelector, spec, status)
 		if err != nil {
-			log.Log.Info("unable to retrieve BGP next hop status")
+			log.Log.Error(err, "unable to retrieve BGP next hop status")
 		}
 		if len(bgpHop) > 0 {
 			wg.Add(len(bgpHop))
@@ -841,7 +841,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 
 		log.Log.Info("Checking if loadbalancer type service's external IP is advertised by speaker pods where endpoints are running")
-		bgpRoute, err := GetBGPIPRoute(r, *clientset, metallbNamespace, speakerSelector, lbService, spec)
+		bgpRoute, err := GetBGPIPRoute(r, *clientset, metallbNamespace, speakerSelector, lbService, spec, status)
 		if err != nil {
 			log.Log.Error(err, "problem with retrieving BGP routes")
 		}
@@ -1388,7 +1388,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 
 			log.Log.Info("Checking BGP next hop status from each worker's speaker pods")
-			bgpHop, err := CheckBGPHopWorkers(r, *clientset, metallbNamespace, nodeSelector, speakerSelector, spec)
+			bgpHop, err := CheckBGPHopWorkers(r, *clientset, metallbNamespace, nodeSelector, speakerSelector, spec, status)
 			if err != nil {
 				log.Log.Error(err, "unable to retrieve BGP next hop status")
 			}
@@ -1576,7 +1576,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 
 			log.Log.Info("Checking if loadbalancer type service's external IP is advertised by speaker pods where endpoints are running")
-			bgpRoute, err := GetBGPIPRoute(r, *clientset, metallbNamespace, speakerSelector, lbService, spec)
+			bgpRoute, err := GetBGPIPRoute(r, *clientset, metallbNamespace, speakerSelector, lbService, spec, status)
 			if err != nil {
 				log.Log.Error(err, "problem with retrieving BGP routes")
 			}
@@ -1956,7 +1956,7 @@ func GetSvcEndPoints(clientset kubernetes.Clientset, loadbalancersvc []string) (
 	return lbservice, nil
 }
 
-func GetBGPIPRoute(r *MetallbScanReconciler, clientset kubernetes.Clientset, metalnamespace string, speakerSelector v1.LabelSelector, lbservice []LBService, spec *monitoringv1alpha1.MetallbScanSpec) ([]BGPRoute, error) {
+func GetBGPIPRoute(r *MetallbScanReconciler, clientset kubernetes.Clientset, metalnamespace string, speakerSelector v1.LabelSelector, lbservice []LBService, spec *monitoringv1alpha1.MetallbScanSpec, status *monitoringv1alpha1.MetallbScanStatus) ([]BGPRoute, error) {
 	var bgproute []BGPRoute
 	for _, sv := range lbservice {
 		for _, node := range sv.epNode {
@@ -1966,10 +1966,19 @@ func GetBGPIPRoute(r *MetallbScanReconciler, clientset kubernetes.Clientset, met
 
 			}
 			if podCount < 1 {
-				log.Log.Error(err, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace))
-				util.SendEmailAlert(*node, fmt.Sprintf("/home/golanguser/.%s.%s.txt", *node, "norunningspeaker"), spec, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace))
+				log.Log.Info(fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace))
+				if !slices.Contains(status.FailedChecks, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace)) {
+					util.SendEmailAlert(*node, fmt.Sprintf("/home/golanguser/.%s.%s.txt", *node, "norunningspeaker"), spec, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace))
+					status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace))
+				}
+
 			} else {
-				util.SendEmailRecoveredAlert(*node, fmt.Sprintf("/home/golanguser/.%s.%s.txt", *node, "norunningspeaker"), spec, fmt.Sprintf("speaker pod found in running status in node %s in namespace %s", *node, metalnamespace))
+				if slices.Contains(status.FailedChecks, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace)) {
+					util.SendEmailRecoveredAlert(*node, fmt.Sprintf("/home/golanguser/.%s.%s.txt", *node, "norunningspeaker"), spec, fmt.Sprintf("speaker pod found in running status in node %s in namespace %s", *node, metalnamespace))
+					idx := slices.Index(status.FailedChecks, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace))
+					status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
+				}
+
 				outFile, err := os.OpenFile(fmt.Sprintf("/home/golanguser/.%s-bgpoutput.txt", pods[0]), os.O_CREATE|os.O_RDWR, 0644)
 				if err != nil {
 					return nil, err
@@ -1998,7 +2007,7 @@ func GetBGPIPRoute(r *MetallbScanReconciler, clientset kubernetes.Clientset, met
 	return bgproute, nil
 }
 
-func CheckBGPHopWorkers(r *MetallbScanReconciler, clientset kubernetes.Clientset, metalnamespace string, nodeSelector v1.LabelSelector, speakerSelector v1.LabelSelector, spec *monitoringv1alpha1.MetallbScanSpec) ([]BGPHop, error) {
+func CheckBGPHopWorkers(r *MetallbScanReconciler, clientset kubernetes.Clientset, metalnamespace string, nodeSelector v1.LabelSelector, speakerSelector v1.LabelSelector, spec *monitoringv1alpha1.MetallbScanSpec, status *monitoringv1alpha1.MetallbScanStatus) ([]BGPHop, error) {
 	var bgphops []BGPHop
 	nodeList, err := clientset.CoreV1().Nodes().List(context.Background(), v1.ListOptions{
 		LabelSelector: labels.Set(nodeSelector.MatchLabels).String(),
@@ -2013,11 +2022,19 @@ func CheckBGPHopWorkers(r *MetallbScanReconciler, clientset kubernetes.Clientset
 			return nil, err
 		}
 		if podCount < 1 {
-			log.Log.Info(fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", node.Name, metalnamespace))
-			util.SendEmailAlert(node.Name, fmt.Sprintf("/home/golanguser/.%s.%s.txt", node.Name, "nospeaker"), spec, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s, this is expected in 5G clusters nodes with role ht25gb, please check the nodename", node.Name, metalnamespace))
+			if !slices.Contains(status.FailedChecks, fmt.Sprintf("no speaker pod is found in node %s in namespace %s", node.Name, metalnamespace)) {
+				status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("no speaker pod is found in node %s in namespace %s", node.Name, metalnamespace))
+				util.SendEmailAlert(node.Name, fmt.Sprintf("/home/golanguser/.%s.%s.txt", node.Name, "nospeaker"), spec, fmt.Sprintf("no speaker pod is found in status in node %s in namespace %s, this is expected in 5G clusters nodes with role ht25gb, please check the nodename", node.Name, metalnamespace))
+			}
+			log.Log.Info(fmt.Sprintf("no speaker pod is found in node %s in namespace %s", node.Name, metalnamespace))
 			// return nil, fmt.Errorf(fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", node.Name, metalnamespace))
 		} else {
-			util.SendEmailRecoveredAlert(node.Name, fmt.Sprintf("/home/golanguser/.%s.%s.txt", node.Name, "nospeaker"), spec, fmt.Sprintf("speaker pod found in running status in node %s in namespace %s", node.Name, metalnamespace))
+			if slices.Contains(status.FailedChecks, fmt.Sprintf("no speaker pod is found in node %s in namespace %s", node.Name, metalnamespace)) {
+				idx := slices.Index(status.FailedChecks, fmt.Sprintf("no speaker pod is found in node %s in namespace %s", node.Name, metalnamespace))
+				status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
+				util.SendEmailRecoveredAlert(node.Name, fmt.Sprintf("/home/golanguser/.%s.%s.txt", node.Name, "nospeaker"), spec, fmt.Sprintf("speaker pod is found in node %s in namespace %s", node.Name, metalnamespace))
+				os.Remove(fmt.Sprintf("/home/golanguser/.%s.%s.txt", node.Name, "nospeaker"))
+			}
 			outFile, err := os.OpenFile(fmt.Sprintf("/home/golanguser/.%s-bgphop.txt", pods[0]), os.O_CREATE|os.O_RDWR, 0644)
 			if err != nil {
 				return nil, err
@@ -2028,7 +2045,12 @@ func CheckBGPHopWorkers(r *MetallbScanReconciler, clientset kubernetes.Clientset
 				return nil, err
 			}
 			if len(hops) != 0 {
-				util.SendEmailRecoveredAlert(node.Name, fmt.Sprintf("/home/golanguser/.%s.%s.txt", node.Name, "nobgphopsspeaker"), spec, fmt.Sprintf("hops are found in speaker pod %s running in node %s", pods[0], node.Name))
+				if slices.Contains(status.FailedChecks, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name)) {
+					util.SendEmailRecoveredAlert(node.Name, fmt.Sprintf("/home/golanguser/.%s.%s.txt", node.Name, "nobgphopsspeaker"), spec, fmt.Sprintf("hops are found in speaker pod %s running in node %s", pods[0], node.Name))
+					idx := slices.Index(status.FailedChecks, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name))
+					status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
+				}
+
 				for _, hopv := range hops {
 					hop := strings.Split(hopv, ":")
 					jsonHop := fmt.Sprintf("show ip bgp neighbor %s json", hop[0])
@@ -2055,8 +2077,12 @@ func CheckBGPHopWorkers(r *MetallbScanReconciler, clientset kubernetes.Clientset
 					}
 				}
 			} else {
+				if !slices.Contains(status.FailedChecks, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name)) {
+					util.SendEmailAlert(node.Name, fmt.Sprintf("/home/golanguser/.%s.%s.txt", node.Name, "nobgphopsspeaker"), spec, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name))
+					status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name))
+				}
 				log.Log.Info(fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name))
-				util.SendEmailAlert(node.Name, fmt.Sprintf("/home/golanguser/.%s.%s.txt", node.Name, "nobgphopsspeaker"), spec, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name))
+
 			}
 		}
 	}
