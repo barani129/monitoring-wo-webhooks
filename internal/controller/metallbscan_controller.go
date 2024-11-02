@@ -2020,9 +2020,7 @@ func check5GHTWorker(clientset kubernetes.Clientset, nodeName string) (bool, err
 	nodeList, err := clientset.CoreV1().Nodes().List(context.Background(), v1.ListOptions{
 		LabelSelector: labels.Set(htWorkerSelector.MatchLabels).String(),
 	})
-	if err != nil && errors.IsNotFound(err) {
-		return false, nil
-	} else if err != nil {
+	if err != nil {
 		return false, err
 	}
 	for _, node := range nodeList.Items {
