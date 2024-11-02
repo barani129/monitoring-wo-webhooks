@@ -1861,9 +1861,15 @@ func checkBgpAdvertisment(clientset kubernetes.Clientset, namespace string, pool
 		return false, "", nil, err
 	}
 	for _, adv := range advList.Items {
-		if slices.Contains(adv.Spec.IPAddressPools, pool) {
-			return true, adv.Name, adv.Spec.Peers, nil
-		} else {
+		if adv.Name != "" {
+			if slices.Contains(adv.Spec.IPAddressPools, pool) {
+				return true, adv.Name, adv.Spec.Peers, nil
+			}
+		}
+	}
+	// checking pools based on labels
+	for _, adv := range advList.Items {
+		if adv.Name != "" {
 			label, err := getIPAddressPoolLabels(clientset, pool, namespace)
 			if err != nil || label == nil {
 				return false, "", nil, err
