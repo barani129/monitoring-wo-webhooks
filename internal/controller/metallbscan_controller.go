@@ -2058,6 +2058,8 @@ func CheckBGPHopWorkers(r *MetallbScanReconciler, clientset kubernetes.Clientset
 					util.SendEmailAlert(node.Name, fmt.Sprintf("/home/golanguser/.%s.%s.txt", util.HandleCNString(node.Name), "nospeaker"), spec, fmt.Sprintf("no speaker pod is found in status in node %s in namespace %s, this is expected in 5G clusters nodes with role ht25gb, please check the nodename", node.Name, metalnamespace))
 				}
 				log.Log.Info(fmt.Sprintf("no speaker pod is found in node %s in namespace %s", node.Name, metalnamespace))
+			} else {
+				log.Log.Info(fmt.Sprintf("no speaker pod is found in node %s in namespace %s, but it appears to be a 5g ht worker node, so ignoring...", node.Name, metalnamespace))
 			}
 			// return nil, fmt.Errorf(fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", node.Name, metalnamespace))
 		} else {
