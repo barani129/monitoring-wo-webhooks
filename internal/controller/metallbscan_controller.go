@@ -2013,7 +2013,7 @@ func GetBGPIPRoute(r *MetallbScanReconciler, clientset kubernetes.Clientset, met
 
 func check5GHTWorker(clientset kubernetes.Clientset, nodeName string) (bool, error) {
 	// 5g ht worker label
-	var htWorkerLabel map[string]string = map[string]string{"node-role.kubernetes.io/worker": ""}
+	var htWorkerLabel map[string]string = map[string]string{"node-role.kubernetes.io/ht25gb": ""}
 	htWorkerSelector := v1.LabelSelector{
 		MatchLabels: htWorkerLabel,
 	}
