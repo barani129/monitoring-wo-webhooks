@@ -1741,9 +1741,10 @@ func checkIpPool(clientset kubernetes.Clientset, namespace string, externalIP st
 			if add != "" {
 				if !strings.Contains(add, "/") {
 					if strings.Contains(add, "-") {
-						inIP := strings.SplitN(add, "-", 2)
-						indeIPs = append(indeIPs, pool.Name+":"+inIP[0])
-						indeIPs = append(indeIPs, pool.Name+":"+inIP[1])
+						inIP := strings.Split(add, "-")
+						for _, IP := range inIP {
+							indeIPs = append(indeIPs, pool.Name+":"+IP)
+						}
 					} else {
 						indeIPs = append(indeIPs, pool.Name+":"+add)
 					}
