@@ -474,7 +474,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 		if mcpRunning {
 			log.Log.Info("machineconfigpool update is in progress, existing")
-			return ctrl.Result{}, err
+			return ctrl.Result{}, nil
 		} else {
 			log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 update is not in progress, proceeding further.")
 		}
@@ -485,7 +485,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 		if len(lbsvcs) < 1 {
 			log.Log.Info(fmt.Sprintf("Cluster %s doesn't have any services of load balancer type", runningHost))
-			return ctrl.Result{}, err
+			return ctrl.Result{}, nil
 		}
 		if len(lbsvcsnoip) > 0 {
 			for _, sv := range lbsvcsnoip {
@@ -635,7 +635,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 		if mcpRunning {
 			log.Log.Info("machineconfigpool update is in progress, existing")
-			return ctrl.Result{}, err
+			return ctrl.Result{}, nil
 		}
 
 		log.Log.Info("Checking endpoints and target pods status for loadbalancer type services service.core/v1")
@@ -736,7 +736,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 		if mcpRunning {
 			log.Log.Info("machineconfigpool update is in progress, existing")
-			return ctrl.Result{}, err
+			return ctrl.Result{}, nil
 		}
 		log.Log.Info("Checking BGP next hop status from each worker's speaker pods")
 		bgpHop, err := CheckBGPHopWorkers(r, *clientset, metallbNamespace, nodeSelector, speakerSelector, spec, status)
@@ -837,7 +837,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 		if mcpRunning {
 			log.Log.Info("machineconfigpool update is in progress, existing")
-			return ctrl.Result{}, err
+			return ctrl.Result{}, nil
 		} else {
 			log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 update is not in progress, proceeding further.")
 		}
@@ -934,7 +934,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 			if mcpRunning {
 				log.Log.Info("machineconfigpool update is in progress, existing")
-				return ctrl.Result{}, err
+				return ctrl.Result{}, nil
 			} else {
 				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 update is not in progress, proceeding further.")
 			}
@@ -945,7 +945,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 			if len(lbsvcs) < 1 {
 				log.Log.Info(fmt.Sprintf("Cluster %s doesn't have any services of load balancer type", runningHost))
-				return ctrl.Result{}, err
+				return ctrl.Result{}, nil
 			}
 			if len(lbsvcsnoip) > 0 {
 				for _, sv := range lbsvcsnoip {
@@ -1211,7 +1211,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 			if mcpRunning {
 				log.Log.Info("machineconfigpool update is in progress, existing")
-				return ctrl.Result{}, err
+				return ctrl.Result{}, nil
 			} else {
 				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 update is not in progress, proceeding further.")
 			}
@@ -1385,7 +1385,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 			if mcpRunning {
 				log.Log.Info("machineconfigpool update is in progress, existing")
-				return ctrl.Result{}, err
+				return ctrl.Result{}, nil
 			} else {
 				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 update is not in progress, proceeding further.")
 			}
@@ -1573,7 +1573,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 			if mcpRunning {
 				log.Log.Info("machineconfigpool update is in progress, existing")
-				return ctrl.Result{}, err
+				return ctrl.Result{}, nil
 			} else {
 				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 update is not in progress, proceeding further.")
 			}
@@ -1741,9 +1741,10 @@ func checkIpPool(clientset kubernetes.Clientset, namespace string, externalIP st
 			if add != "" {
 				if !strings.Contains(add, "/") {
 					if strings.Contains(add, "-") {
-						inIP := strings.SplitN(add, "-", 2)
-						indeIPs = append(indeIPs, pool.Name+":"+inIP[0])
-						indeIPs = append(indeIPs, pool.Name+":"+inIP[1])
+						inIP := strings.Split(add, "-")
+						for _, IP := range inIP {
+							indeIPs = append(indeIPs, pool.Name+":"+IP)
+						}
 					} else {
 						indeIPs = append(indeIPs, pool.Name+":"+add)
 					}
