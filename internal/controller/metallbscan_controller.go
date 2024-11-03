@@ -748,10 +748,10 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			for _, hop := range bgpHop {
 				go func() {
 					defer wg.Done()
-					if hop.established != "Established" {
+					if hop.established != "Established" || hop.established != "Active" {
 						if !slices.Contains(status.FailedChecks, fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod", hop.ip, hop.nodeName)) {
 							if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notestablished"), spec, fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
+								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notestablished"), spec, fmt.Sprintf("BGP neighbor %s connectivity is not established/active from worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
 							}
 							status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod", hop.ip, hop.nodeName))
 							if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
@@ -799,26 +799,28 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						}
 					}
 					if hop.bfdstatus != "" && hop.bfdstatus != "Up" {
-						if !slices.Contains(status.FailedChecks, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod", hop.ip, hop.nodeName)) {
-							if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "nobfd"), spec, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
-							}
-							status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod", hop.ip, hop.nodeName))
-							if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnobfd"), fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
-								if err != nil {
-									log.Log.Error(err, "Failed to notify the external system")
+						if !strings.Contains(runningHost, "5g") {
+							if !slices.Contains(status.FailedChecks, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod", hop.ip, hop.nodeName)) {
+								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "nobfd"), spec, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
 								}
-								fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnobfd"))
-								if err != nil {
-									log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
-								}
-								incident, err := util.SetIncidentID(spec, string(username), string(password), fingerprint)
-								if err != nil || incident == "" {
-									log.Log.Info("Failed to update the incident ID, either incident is getting created or other issues.")
-								}
-								if !slices.Contains(status.IncidentID, incident) && incident != "" && incident != "[Pending]" {
-									status.IncidentID = append(status.IncidentID, incident)
+								status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod", hop.ip, hop.nodeName))
+								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
+									err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnobfd"), fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
+									if err != nil {
+										log.Log.Error(err, "Failed to notify the external system")
+									}
+									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnobfd"))
+									if err != nil {
+										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
+									}
+									incident, err := util.SetIncidentID(spec, string(username), string(password), fingerprint)
+									if err != nil || incident == "" {
+										log.Log.Info("Failed to update the incident ID, either incident is getting created or other issues.")
+									}
+									if !slices.Contains(status.IncidentID, incident) && incident != "" && incident != "[Pending]" {
+										status.IncidentID = append(status.IncidentID, incident)
+									}
 								}
 							}
 						}
@@ -1400,10 +1402,10 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				for _, hop := range bgpHop {
 					go func() {
 						defer wg.Done()
-						if hop.established != "Established" {
+						if hop.established != "Established" || hop.established != "Active" {
 							if !slices.Contains(status.FailedChecks, fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod", hop.ip, hop.nodeName)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notestablished"), spec, fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
+									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notestablished"), spec, fmt.Sprintf("BGP neighbor %s connectivity is not established/active from worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
 								}
 								status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod", hop.ip, hop.nodeName))
 								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
@@ -1427,7 +1429,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						} else {
 							if slices.Contains(status.FailedChecks, fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod", hop.ip, hop.nodeName)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notestablished"), spec, fmt.Sprintf("BGP neighbor %s connectivity has now been established from worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
+									util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notestablished"), spec, fmt.Sprintf("BGP neighbor %s connectivity has now been established/active from worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
 								}
 								idx := slices.Index(status.FailedChecks, fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod", hop.ip, hop.nodeName))
 								status.FailedChecks = deleteMetalElementSlice(status.FailedChecks, idx)
@@ -1507,26 +1509,28 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 							}
 						}
 						if hop.bfdstatus != "" && hop.bfdstatus != "Up" {
-							if !slices.Contains(status.FailedChecks, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod", hop.ip, hop.nodeName)) {
-								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "nobfd"), spec, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
-								}
-								status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod", hop.ip, hop.nodeName))
-								if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
-									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnobfd"), fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
-									if err != nil {
-										log.Log.Error(err, "Failed to notify the external system")
+							if !strings.Contains(runningHost, "5g") {
+								if !slices.Contains(status.FailedChecks, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod", hop.ip, hop.nodeName)) {
+									if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+										util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "nobfd"), spec, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
 									}
-									fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnobfd"))
-									if err != nil {
-										log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
-									}
-									incident, err := util.SetIncidentID(spec, string(username), string(password), fingerprint)
-									if err != nil || incident == "" {
-										log.Log.Info("Failed to update the incident ID, either incident is getting created or other issues.")
-									}
-									if !slices.Contains(status.IncidentID, incident) && incident != "" && incident != "[Pending]" {
-										status.IncidentID = append(status.IncidentID, incident)
+									status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod", hop.ip, hop.nodeName))
+									if spec.NotifyExtenal != nil && *spec.NotifyExtenal {
+										err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnobfd"), fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
+										if err != nil {
+											log.Log.Error(err, "Failed to notify the external system")
+										}
+										fingerprint, err := util.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnobfd"))
+										if err != nil {
+											log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
+										}
+										incident, err := util.SetIncidentID(spec, string(username), string(password), fingerprint)
+										if err != nil || incident == "" {
+											log.Log.Info("Failed to update the incident ID, either incident is getting created or other issues.")
+										}
+										if !slices.Contains(status.IncidentID, incident) && incident != "" && incident != "[Pending]" {
+											status.IncidentID = append(status.IncidentID, incident)
+										}
 									}
 								}
 							}
