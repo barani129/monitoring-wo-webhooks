@@ -298,6 +298,7 @@ func (r *MetallbScanReconciler) newIssuer() (client.Object, error) {
 //+kubebuilder:rbac:groups="",resources=pods/log,verbs=get;create;list;watch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch
+//+kubebuilder:rbac:groups="apps",resources=daemonsets,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
 //+kubebuilder:rbac:groups="metallb.io",resources=ipaddresspools,verbs=get;list;watch
 //+kubebuilder:rbac:groups="metallb.io",resources=bgpadvertisements,verbs=get;list;watch
