@@ -799,7 +799,9 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						}
 					}
 					if hop.bfdstatus != "" && hop.bfdstatus != "Up" {
-						if spec.IgnoreBFD != nil && !*spec.IgnoreBFD {
+						if spec.IgnoreBFD != nil && *spec.IgnoreBFD {
+							log.Log.Info(fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod and spec.ignoreBFD is set, so ignoring", hop.ip, hop.nodeName))
+						} else {
 							if !slices.Contains(status.FailedChecks, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod", hop.ip, hop.nodeName)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
 									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "nobfd"), spec, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
@@ -823,8 +825,6 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 									}
 								}
 							}
-						} else if spec.IgnoreBFD != nil && *spec.IgnoreBFD {
-							log.Log.Info(fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod and spec.ignoreBFD is set, so ignoring", hop.ip, hop.nodeName))
 						}
 					}
 				}()
@@ -1511,7 +1511,9 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 							}
 						}
 						if hop.bfdstatus != "" && hop.bfdstatus != "Up" {
-							if spec.IgnoreBFD != nil && !*spec.IgnoreBFD {
+							if spec.IgnoreBFD != nil && *spec.IgnoreBFD {
+								log.Log.Info(fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod and spec.ignoreBFD is set, so ignoring", hop.ip, hop.nodeName))
+							} else {
 								if !slices.Contains(status.FailedChecks, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod", hop.ip, hop.nodeName)) {
 									if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
 										util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "nobfd"), spec, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
@@ -1535,8 +1537,6 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 										}
 									}
 								}
-							} else if spec.IgnoreBFD != nil && *spec.IgnoreBFD {
-								log.Log.Info(fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod and spec.ignoreBFD is set, so ignoring", hop.ip, hop.nodeName))
 							}
 						} else {
 							if slices.Contains(status.FailedChecks, fmt.Sprintf("BGP neighbor %s's BFD doesn't have a valid status in worker %s' speaker pod", hop.ip, hop.nodeName)) {
@@ -2089,7 +2089,9 @@ func CheckBGPHopWorkers(r *MetallbScanReconciler, clientset kubernetes.Clientset
 				return nil, err
 			}
 			if len(hops) != 0 {
-				if spec.IgnoreNoBGPHop != nil && !*spec.IgnoreNoBGPHop {
+				if spec.IgnoreNoBGPHop != nil && *spec.IgnoreNoBGPHop {
+					log.Log.Info(fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s, alering spec.ignoreNoBGPHop is set to be disabled so ignoring", pods[0], node.Name))
+				} else {
 					if slices.Contains(status.FailedChecks, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name)) {
 						util.SendEmailRecoveredAlert(node.Name, fmt.Sprintf("/home/golanguser/.%s.%s.txt", util.HandleCNString(node.Name), "nobgphopsspeaker"), spec, fmt.Sprintf("hops are found in speaker pod %s running in node %s", pods[0], node.Name))
 						idx := slices.Index(status.FailedChecks, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name))
@@ -2122,8 +2124,6 @@ func CheckBGPHopWorkers(r *MetallbScanReconciler, clientset kubernetes.Clientset
 							})
 						}
 					}
-				} else if spec.IgnoreNoBGPHop != nil && !*spec.IgnoreNoBGPHop {
-					log.Log.Info(fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s, alering spec.ignoreNoBGPHop is set to be disabled so ignoring", pods[0], node.Name))
 				}
 			} else {
 				if !slices.Contains(status.FailedChecks, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name)) {
