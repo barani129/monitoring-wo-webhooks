@@ -85,6 +85,14 @@ spec:
                 description: 'URL of the external alert system. Example: http://notify.example.com/
                   (both http/https supported with basic authentication)'
                 type: string
+              ignoreBFD:
+                description: Set it to true to disable BFD monitoring for a configured
+                  BGP Hop in a worker
+                type: boolean
+              ignoreNoBGPHop:
+                description: Set it to true to disable alerting if no configured BGP
+                  hops are found in a worker
+                type: boolean
               metalLbNamespace:
                 description: Target metallb namespace
                 type: string

@@ -37,6 +37,14 @@ type MetallbScanSpec struct {
 	// +optional
 	Suspend *bool `json:"suspend"`
 
+	// Set it to true to disable BFD monitoring for a configured BGP Hop in a worker
+	// +optional
+	IgnoreBFD *bool `json:"ignoreBFD"`
+
+	// Set it to true to disable alerting if no configured BGP hops are found in a worker
+	// +optional
+	IgnoreNoBGPHop *bool `json:"ignoreNoBGPHop"`
+
 	// Label for selecting workers
 	// +optional
 	WorkerLabel *map[string]string `json:"workerLabel"`
