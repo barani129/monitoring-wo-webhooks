@@ -454,7 +454,10 @@ func RetrieveBGPHop(outFile *os.File) ([]string, error) {
 	var ip8RE = regexp.MustCompile(`[0-9][0-9][0-9].[0-9][0-9][0-9].[0-9][0-9][0-9].[0-9][0-9]`)
 	var ip9RE = regexp.MustCompile(`[0-9][0-9].[0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]`)
 	var ip10RE = regexp.MustCompile(`[0-9][0-9].[0-9][0-9][0-9].[0-9][0-9].[0-9]`)
-	// var ip11RE = regexp.MustCompile(`[0-9].[0-9].[0-9].[0-9]`)
+	var ip11RE = regexp.MustCompile(`[0-9][0-9].[0-9][0-9].[0-9][0-9][0-9].[0-9]`)
+	var ip12RE = regexp.MustCompile(`[0-9][0-9].[0-9][0-9][0-9].[0-9][0-9].[0-9]`)
+	var ip13RE = regexp.MustCompile(`[0-9][0-9].[0-9][0-9][0-9].[0-9][0-9][0-9].[0-9]`)
+	var ip14RE = regexp.MustCompile(`[0-9][0-9][0-9].[0-9][0-9][0-9].[0-9][0-9][0-9].[0-9]`)
 	var hops []string
 	// s := bufio.NewScanner(outFile)
 	content, err := os.ReadFile(outFile.Name())
@@ -464,9 +467,9 @@ func RetrieveBGPHop(outFile *os.File) ([]string, error) {
 	contents := strings.Split(string(content), "\n")
 	for _, line := range contents {
 		line = strings.Trim(line, " ")
-		if ipRE.Match([]byte(line)) || ip2RE.Match([]byte(line)) || ip3RE.Match([]byte(line)) || ip4RE.Match([]byte(line)) || ip5RE.Match([]byte(line)) || ip6RE.Match([]byte(line)) || ip7RE.Match([]byte(line)) || ip8RE.Match([]byte(line)) || ip9RE.Match([]byte(line)) || ip10RE.Match([]byte(line)) {
+		if ipRE.Match([]byte(line)) || ip2RE.Match([]byte(line)) || ip3RE.Match([]byte(line)) || ip4RE.Match([]byte(line)) || ip5RE.Match([]byte(line)) || ip6RE.Match([]byte(line)) || ip7RE.Match([]byte(line)) || ip8RE.Match([]byte(line)) || ip9RE.Match([]byte(line)) || ip10RE.Match([]byte(line)) || ip11RE.Match([]byte(line)) || ip12RE.Match([]byte(line)) || ip13RE.Match([]byte(line)) || ip14RE.Match([]byte(line)) {
 			lines := strings.Split(line, " ")
-			if ipRE.Match([]byte(lines[0])) || ip2RE.Match([]byte(lines[0])) || ip3RE.Match([]byte(lines[0])) || ip4RE.Match([]byte(lines[0])) || ip5RE.Match([]byte(lines[0])) || ip6RE.Match([]byte(lines[0])) || ip7RE.Match([]byte(lines[0])) || ip8RE.Match([]byte(lines[0])) || ip9RE.Match([]byte(lines[0])) || ip10RE.Match([]byte(lines[0])) {
+			if ipRE.Match([]byte(lines[0])) || ip2RE.Match([]byte(lines[0])) || ip3RE.Match([]byte(lines[0])) || ip4RE.Match([]byte(lines[0])) || ip5RE.Match([]byte(lines[0])) || ip6RE.Match([]byte(lines[0])) || ip7RE.Match([]byte(lines[0])) || ip8RE.Match([]byte(lines[0])) || ip9RE.Match([]byte(lines[0])) || ip10RE.Match([]byte(lines[0])) || ip11RE.Match([]byte(lines[0])) || ip12RE.Match([]byte(lines[0])) || ip13RE.Match([]byte(lines[0])) || ip14RE.Match([]byte(lines[0])) {
 				hops = append(hops, lines[0]+":"+lines[1])
 			}
 		}
