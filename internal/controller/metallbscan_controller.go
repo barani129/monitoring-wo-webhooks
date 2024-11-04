@@ -2089,48 +2089,47 @@ func CheckBGPHopWorkers(r *MetallbScanReconciler, clientset kubernetes.Clientset
 				return nil, err
 			}
 			if len(hops) != 0 {
+				if slices.Contains(status.FailedChecks, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name)) {
+					util.SendEmailRecoveredAlert(node.Name, fmt.Sprintf("/home/golanguser/.%s.%s.txt", util.HandleCNString(node.Name), "nobgphopsspeaker"), spec, fmt.Sprintf("hops are found in speaker pod %s running in node %s", pods[0], node.Name))
+					idx := slices.Index(status.FailedChecks, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name))
+					status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
+					os.Remove(fmt.Sprintf("/home/golanguser/.%s.%s.txt", util.HandleCNString(node.Name), "nobgphopsspeaker"))
+				}
+				for _, hopv := range hops {
+					hop := strings.Split(hopv, ":")
+					jsonHop := fmt.Sprintf("show ip bgp neighbor %s json", hop[0])
+					hopFile, err := os.OpenFile(fmt.Sprintf("/home/golanguser/.%s-bgphoproute.txt", pods[0]), os.O_CREATE|os.O_RDWR, 0644)
+					if err != nil {
+						return nil, err
+					}
+					writeFile(r, fmt.Sprintf("%s", jsonHop), hopFile, pods[0], metalnamespace)
+					hopStatus, err := checkBGPHopStatus(hopFile, hop[0])
+					if err != nil {
+						return nil, err
+					}
+					if hopStatus.RemoteAs != 0 {
+						bgphops = append(bgphops, BGPHop{
+							nodeName:    node.Name,
+							ip:          hop[0],
+							remoteAs:    hopStatus.RemoteAs,
+							valid:       true,
+							validstatus: hop[1],
+							established: hopStatus.BgpState,
+							upTimer:     hopStatus.BgpTimerUpString,
+							bfdstatus:   hopStatus.PeerBfdInfo.Status,
+						})
+					}
+				}
+
+			} else {
 				if spec.IgnoreNoBGPHop != nil && *spec.IgnoreNoBGPHop {
 					log.Log.Info(fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s, alering spec.ignoreNoBGPHop is set to be disabled so ignoring", pods[0], node.Name))
 				} else {
-					if slices.Contains(status.FailedChecks, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name)) {
-						util.SendEmailRecoveredAlert(node.Name, fmt.Sprintf("/home/golanguser/.%s.%s.txt", util.HandleCNString(node.Name), "nobgphopsspeaker"), spec, fmt.Sprintf("hops are found in speaker pod %s running in node %s", pods[0], node.Name))
-						idx := slices.Index(status.FailedChecks, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name))
-						status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
-						os.Remove(fmt.Sprintf("/home/golanguser/.%s.%s.txt", util.HandleCNString(node.Name), "nobgphopsspeaker"))
-					}
-
-					for _, hopv := range hops {
-						hop := strings.Split(hopv, ":")
-						jsonHop := fmt.Sprintf("show ip bgp neighbor %s json", hop[0])
-						hopFile, err := os.OpenFile(fmt.Sprintf("/home/golanguser/.%s-bgphoproute.txt", pods[0]), os.O_CREATE|os.O_RDWR, 0644)
-						if err != nil {
-							return nil, err
-						}
-						writeFile(r, fmt.Sprintf("%s", jsonHop), hopFile, pods[0], metalnamespace)
-						hopStatus, err := checkBGPHopStatus(hopFile, hop[0])
-						if err != nil {
-							return nil, err
-						}
-						if hopStatus.RemoteAs != 0 {
-							bgphops = append(bgphops, BGPHop{
-								nodeName:    node.Name,
-								ip:          hop[0],
-								remoteAs:    hopStatus.RemoteAs,
-								valid:       true,
-								validstatus: hop[1],
-								established: hopStatus.BgpState,
-								upTimer:     hopStatus.BgpTimerUpString,
-								bfdstatus:   hopStatus.PeerBfdInfo.Status,
-							})
-						}
+					if !slices.Contains(status.FailedChecks, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name)) {
+						util.SendEmailAlert(node.Name, fmt.Sprintf("/home/golanguser/.%s.%s.txt", util.HandleCNString(node.Name), "nobgphopsspeaker"), spec, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name))
+						status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name))
 					}
 				}
-			} else {
-				if !slices.Contains(status.FailedChecks, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name)) {
-					util.SendEmailAlert(node.Name, fmt.Sprintf("/home/golanguser/.%s.%s.txt", util.HandleCNString(node.Name), "nobgphopsspeaker"), spec, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name))
-					status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name))
-				}
-				log.Log.Info(fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name))
 			}
 		}
 	}
