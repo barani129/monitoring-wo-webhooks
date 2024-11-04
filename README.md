@@ -1,8 +1,16 @@
 # monitoring
-Custom resource approach to monitor containers that are terminated with non-zero exit code and reachability of target IP/FQDN on a particular port in a single image.
+Collection of different CRDs to perform the intended actions
+```sh
+containerscans: Monitors containers running status in the mentioned namespace
+portscans: Monitor remote FQDN on the given port
+vmscans: Monitor the status of openstack control plane VMs
+metallbscans: Monitor load balancer type services status and its endpoints status and check service's external IP advertisement. Additionally checks remote BGP hops and its status from the kubernetes workers nodes
+```
 
 ## Description
-Custom resource approach to monitor containers that are terminated with non-zero exit code and reachability of target IP/FQDN on a particular port in a single image and notifies the end user and optionally can notify the remote systems.
+Collection of different CRDs to perform the intended actions.
+
+It is possible to only install the required CRDs, but controller pod will throw errors. If necessary, clone the repo and remove the not required CRD registration from cmd/main.go
 
 After the CRD installation, please execute the following command to under each field in the spec.
 ```sh
@@ -11,7 +19,6 @@ kubectl/oc explain portscans.monitoring.spark.co.nz
 kubectl/oc explain vmscans.monitoring.spark.co.nz
 kubectl/oc explain metallbscanis.monitoring.spark.co.nz
 ```
-vmscan CRD is for reporting if more than one VM is running on the same host, this may not be much useful to others, but installing the CRD is required to avoid errors in the controller deployment logs.
 
 ## Deployment
 Sample deployment
@@ -48,12 +55,13 @@ update security context, runAsUser and runAsGroup if required.
 - docker version 17.03+.
 - kubectl version v1.11.3+.
 - Access to a Kubernetes v1.11.3+ cluster.
+- metallb CRDs is a prerequisite for metallbscans
 
 ### To Deploy on the cluster
 **Build and push your image to the location specified by `IMG`:**
 
 ```sh
-make docker-build docker-push IMG=<some-registry>/container-scan:tag
+make docker-build docker-push IMG=<some-registry>/monitoring-wo-webhooks:tag
 ```
 
 **NOTE:** This image ought to be published in the personal registry you specified.
@@ -69,7 +77,7 @@ make install
 **Deploy the Manager to the cluster with the image specified by `IMG`:**
 
 ```sh
-make deploy IMG=<some-registry>/container-scan:tag
+make deploy IMG=<some-registry>/monitoring-wo-webhooks:tag
 ```
 
 > **NOTE**: If you encounter RBAC errors, you may need to grant yourself cluster-admin
@@ -110,7 +118,7 @@ Following are the steps to build the installer and distribute this project to us
 1. Build the installer for the image built and published in the registry:
 
 ```sh
-make build-installer IMG=<some-registry>/container-scan:tag
+make build-installer IMG=<some-registry>/monitoring-wo-webhooks:tag
 ```
 
 NOTE: The makefile target mentioned above generates an 'install.yaml'
@@ -123,15 +131,8 @@ its dependencies.
 Users can just run kubectl apply -f <URL for YAML BUNDLE> to install the project, i.e.:
 
 ```sh
-kubectl apply -f https://raw.githubusercontent.com/<org>/container-scan/<tag or branch>/dist/install.yaml
+kubectl apply -f https://raw.githubusercontent.com/<org>/monitoring-wo-webhooks/<tag or branch>/dist/install.yaml
 ```
-
-## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
-
-**NOTE:** Run `make help` for more information on all potential `make` targets
-
-More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
 
 ## License
 
