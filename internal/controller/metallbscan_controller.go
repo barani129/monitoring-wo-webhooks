@@ -2126,7 +2126,7 @@ func CheckBGPHopWorkers(r *MetallbScanReconciler, clientset kubernetes.Clientset
 					log.Log.Info(fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s, alering spec.ignoreNoBGPHop is set to be disabled so ignoring", pods[0], node.Name))
 				} else {
 					if !slices.Contains(status.FailedChecks, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name)) {
-						util.SendEmailAlert(node.Name, fmt.Sprintf("/home/golanguser/.%s.%s.txt", util.HandleCNString(node.Name), "nobgphopsspeaker"), spec, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name))
+						util.SendEmailAlert(node.Name, fmt.Sprintf("/home/golanguser/.%s.%s.txt", util.HandleCNString(node.Name), "nobgphopsspeaker"), spec, fmt.Sprintf("no configured hops are found (show ip bgp nexthop) in speaker pod %s running in node %s", pods[0], node.Name))
 						status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name))
 					}
 				}
