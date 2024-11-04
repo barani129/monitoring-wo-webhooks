@@ -273,6 +273,16 @@ func (in *MetallbScanSpec) DeepCopyInto(out *MetallbScanSpec) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.IgnoreBFD != nil {
+		in, out := &in.IgnoreBFD, &out.IgnoreBFD
+		*out = new(bool)
+		**out = **in
+	}
+	if in.IgnoreNoBGPHop != nil {
+		in, out := &in.IgnoreNoBGPHop, &out.IgnoreNoBGPHop
+		*out = new(bool)
+		**out = **in
+	}
 	if in.WorkerLabel != nil {
 		in, out := &in.WorkerLabel, &out.WorkerLabel
 		*out = new(map[string]string)
