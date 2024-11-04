@@ -748,7 +748,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			for _, hop := range bgpHop {
 				go func() {
 					defer wg.Done()
-					if hop.established != "Established" || hop.established != "Active" {
+					if hop.established != "Established" && hop.established != "Active" {
 						if !slices.Contains(status.FailedChecks, fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod", hop.ip, hop.nodeName)) {
 							if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
 								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notestablished"), spec, fmt.Sprintf("BGP neighbor %s connectivity is not established/active from worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
@@ -1404,7 +1404,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				for _, hop := range bgpHop {
 					go func() {
 						defer wg.Done()
-						if hop.established != "Established" || hop.established != "Active" {
+						if hop.established != "Established" && hop.established != "Active" {
 							if !slices.Contains(status.FailedChecks, fmt.Sprintf("BGP neighbor %s connectivity is not established from worker %s' speaker pod", hop.ip, hop.nodeName)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
 									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notestablished"), spec, fmt.Sprintf("BGP neighbor %s connectivity is not established/active from worker %s' speaker pod in cluster %s", hop.ip, hop.nodeName, runningHost))
