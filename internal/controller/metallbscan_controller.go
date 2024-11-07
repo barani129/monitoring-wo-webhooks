@@ -1351,7 +1351,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						defer wg.Done()
 						if slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s in namespace %s doesn't have any target pods", svc.name, svc.namespace)) {
 							if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-								util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "noendpoint"), spec, fmt.Sprintf("Service %s in namespace %s does have endpoints/pods in cluster %s", svc.name, svc.namespace, runningHost))
+								util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "noendpoint"), spec, fmt.Sprintf("Service %s in namespace %s does at least have one target pod in cluster %s", svc.name, svc.namespace, runningHost))
 							}
 							idx := slices.Index(status.FailedChecks, fmt.Sprintf("Service %s in namespace %s doesn't have any target pods", svc.name, svc.namespace))
 							status.FailedChecks = deleteMetalElementSlice(status.FailedChecks, idx)
