@@ -105,7 +105,8 @@ spec:
               speakerPodLabel:
                 additionalProperties:
                   type: string
-                description: Label for selecting workers
+                description: Label for selecting workers and speaker daemonset in
+                  metallb namespace
                 type: object
               suspend:
                 description: Set suspend to true to disable monitoring the custom

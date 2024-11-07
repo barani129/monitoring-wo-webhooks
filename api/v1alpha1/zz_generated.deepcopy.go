@@ -320,8 +320,8 @@ func (in *MetallbScanSpec) DeepCopyInto(out *MetallbScanSpec) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.NotifyExtenal != nil {
-		in, out := &in.NotifyExtenal, &out.NotifyExtenal
+	if in.NotifyExternal != nil {
+		in, out := &in.NotifyExternal, &out.NotifyExternal
 		*out = new(bool)
 		**out = **in
 	}
