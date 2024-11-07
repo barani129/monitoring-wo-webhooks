@@ -49,7 +49,7 @@ type MetallbScanSpec struct {
 	// +optional
 	WorkerLabel *map[string]string `json:"workerLabel"`
 
-	// Label for selecting workers
+	// Label for selecting workers and speaker daemonset in metallb namespace
 	// +optional
 	SpeakerPodLabel *map[string]string `json:"speakerPodLabel"`
 
@@ -75,7 +75,7 @@ type MetallbScanSpec struct {
 
 	// To notify the external alerting system
 	// +optional
-	NotifyExtenal *bool `json:"notifyExternal,omitempty"`
+	NotifyExternal *bool `json:"notifyExternal,omitempty"`
 
 	// URL of the external alert system. Example: http://notify.example.com/ (both http/https supported with basic authentication)
 	// +optional
