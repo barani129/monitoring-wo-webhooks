@@ -991,7 +991,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 			if len(lbsvcs) < 1 {
 				log.Log.Info(fmt.Sprintf("Cluster %s doesn't have any services of load balancer type", runningHost))
-				return ctrl.Result{}, nil
+				return ctrl.Result{RequeueAfter: defaultHealthCheckIntervalMetal}, nil
 			}
 			if len(lbsvcsnoip) > 0 {
 				for _, sv := range lbsvcsnoip {
