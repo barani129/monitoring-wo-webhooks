@@ -420,7 +420,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	if spec.Suspend != nil && *spec.Suspend {
 		log.Log.Info("Metallb scan is suspended, skipping...")
-		return ctrl.Result{}, nil
+		return ctrl.Result{RequeueAfter: defaultHealthCheckIntervalMetal}, nil
 	}
 
 	//get config from openshift's openshift-apiserver
@@ -481,7 +481,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				}
 				status.FailedChecks = append(status.FailedChecks, "MachineConfigPool update is in progress")
 			}
-			return ctrl.Result{}, nil
+			return ctrl.Result{RequeueAfter: defaultHealthCheckIntervalMetal}, nil
 		} else {
 			log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 update is not in progress, proceeding further.")
 		}
@@ -492,7 +492,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 		if len(lbsvcs) < 1 {
 			log.Log.Info(fmt.Sprintf("Cluster %s doesn't have any services of load balancer type", runningHost))
-			return ctrl.Result{}, nil
+			return ctrl.Result{RequeueAfter: defaultHealthCheckIntervalMetal}, nil
 		}
 		if len(lbsvcsnoip) > 0 {
 			for _, sv := range lbsvcsnoip {
@@ -648,9 +648,10 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				}
 				status.FailedChecks = append(status.FailedChecks, "MachineConfigPool update is in progress")
 			}
-			return ctrl.Result{}, nil
+			return ctrl.Result{RequeueAfter: defaultHealthCheckIntervalMetal}, nil
+		} else {
+			log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 update is not in progress, proceeding further.")
 		}
-
 		log.Log.Info("Checking endpoints and target pods status for loadbalancer type services service.core/v1")
 		lbService, err := GetSvcEndPoints(*clientset, lbsvcs)
 		if err != nil {
@@ -755,7 +756,9 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				}
 				status.FailedChecks = append(status.FailedChecks, "MachineConfigPool update is in progress")
 			}
-			return ctrl.Result{}, nil
+			return ctrl.Result{RequeueAfter: defaultHealthCheckIntervalMetal}, nil
+		} else {
+			log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 update is not in progress, proceeding further.")
 		}
 		log.Log.Info("Checking BGP next hop status from each worker's speaker pods")
 		bgpHop, err := CheckBGPHopWorkers(r, *clientset, metallbNamespace, nodeSelector, speakerSelector, spec, status)
@@ -866,7 +869,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				}
 				status.FailedChecks = append(status.FailedChecks, "MachineConfigPool update is in progress")
 			}
-			return ctrl.Result{}, nil
+			return ctrl.Result{RequeueAfter: defaultHealthCheckIntervalMetal}, nil
 		} else {
 			log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 update is not in progress, proceeding further.")
 		}
@@ -969,7 +972,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 					}
 					status.FailedChecks = append(status.FailedChecks, "MachineConfigPool update is in progress")
 				}
-				return ctrl.Result{}, nil
+				return ctrl.Result{RequeueAfter: defaultHealthCheckIntervalMetal}, nil
 			} else {
 				if slices.Contains(status.FailedChecks, "MachineConfigPool update is in progress") {
 					if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
@@ -1260,7 +1263,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 					}
 					status.FailedChecks = append(status.FailedChecks, "MachineConfigPool update is in progress")
 				}
-				return ctrl.Result{}, nil
+				return ctrl.Result{RequeueAfter: defaultHealthCheckIntervalMetal}, nil
 			} else {
 				if slices.Contains(status.FailedChecks, "MachineConfigPool update is in progress") {
 					if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
@@ -1448,7 +1451,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 					}
 					status.FailedChecks = append(status.FailedChecks, "MachineConfigPool update is in progress")
 				}
-				return ctrl.Result{}, nil
+				return ctrl.Result{RequeueAfter: defaultHealthCheckIntervalMetal}, nil
 			} else {
 				if slices.Contains(status.FailedChecks, "MachineConfigPool update is in progress") {
 					if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
@@ -1654,7 +1657,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 					}
 					status.FailedChecks = append(status.FailedChecks, "MachineConfigPool update is in progress")
 				}
-				return ctrl.Result{}, nil
+				return ctrl.Result{RequeueAfter: defaultHealthCheckIntervalMetal}, nil
 			} else {
 				if slices.Contains(status.FailedChecks, "MachineConfigPool update is in progress") {
 					if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
