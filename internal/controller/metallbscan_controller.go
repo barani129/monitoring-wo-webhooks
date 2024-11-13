@@ -1642,10 +1642,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				wg.Wait()
 			}
 			log.Log.Info("Running BGP neighbour cleanup")
-			err = CheckIfBGPHopExists(r, *clientset, metallbNamespace, nodeSelector, speakerSelector, spec, status, runningHost)
-			if err != nil {
-				log.Log.Info(fmt.Sprintf("Unable to cleanup BGP nexthop failure alerts: %s", err.Error()))
-			}
+			CheckIfBGPHopExists(r, *clientset, metallbNamespace, nodeSelector, speakerSelector, spec, status, runningHost)
 			log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
 			mcpRunning, mcpName, err = isMcpUpdating(*clientset)
 			if err != nil && errors.IsNotFound(err) {
@@ -2153,7 +2150,7 @@ func checkSpeakerDaemonset(clientset kubernetes.Clientset, namespace string, sel
 	return false, nil
 }
 
-func CheckIfBGPHopExists(r *MetallbScanReconciler, clientset kubernetes.Clientset, metalnamespace string, nodeSelector v1.LabelSelector, speakerSelector v1.LabelSelector, spec *monitoringv1alpha1.MetallbScanSpec, status *monitoringv1alpha1.MetallbScanStatus, runningHost string) error {
+func CheckIfBGPHopExists(r *MetallbScanReconciler, clientset kubernetes.Clientset, metalnamespace string, nodeSelector v1.LabelSelector, speakerSelector v1.LabelSelector, spec *monitoringv1alpha1.MetallbScanSpec, status *monitoringv1alpha1.MetallbScanStatus, runningHost string) {
 	var nWorker string
 	var hop string
 	for idx, check := range status.FailedChecks {
@@ -2166,7 +2163,7 @@ func CheckIfBGPHopExists(r *MetallbScanReconciler, clientset kubernetes.Clientse
 		if nWorker != "" {
 			podCount, pods, err := util.GetpodsFromNodeBasedonLabels(clientset, nWorker, metalnamespace, speakerSelector)
 			if err != nil {
-				return err
+				log.Log.Info(fmt.Sprintf("%s", err.Error()))
 			}
 			if podCount < 1 {
 				daemon, err := checkSpeakerDaemonset(clientset, metalnamespace, speakerSelector)
@@ -2190,21 +2187,19 @@ func CheckIfBGPHopExists(r *MetallbScanReconciler, clientset kubernetes.Clientse
 					os.Remove(fmt.Sprintf("/home/golanguser/.%s.%s.txt", util.HandleCNString(nWorker), "nospeaker"))
 				}
 				outFile, err := os.OpenFile(fmt.Sprintf("/home/golanguser/.%s-bgphop.txt", pods[0]), os.O_CREATE|os.O_RDWR, 0644)
-				writeFile(r, fmt.Sprintf("%s", "show ip bgp nexthop"), outFile, pods[0], metalnamespace)
 				if err != nil {
-					return err
+					log.Log.Info(fmt.Sprintf("unable to write to the file, %s", err.Error()))
 				}
+				writeFile(r, fmt.Sprintf("%s", "show ip bgp nexthop"), outFile, pods[0], metalnamespace)
 				exists, err := util.IsExistBGPHop(outFile, hop)
 				if err == nil && !exists {
 					status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
-					return nil
+				} else if err != nil {
+					log.Log.Info(fmt.Sprintf("%s", err.Error()))
 				}
 			}
-		} else {
-			return fmt.Errorf("worker string is empty")
 		}
 	}
-	return nil
 }
 
 func CheckBGPHopWorkers(r *MetallbScanReconciler, clientset kubernetes.Clientset, metalnamespace string, nodeSelector v1.LabelSelector, speakerSelector v1.LabelSelector, spec *monitoringv1alpha1.MetallbScanSpec, status *monitoringv1alpha1.MetallbScanStatus, runningHost string) ([]BGPHop, error) {
