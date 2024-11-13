@@ -506,7 +506,7 @@ func IsExistBGPHop(outFile *os.File, hop string) (bool, error) {
 		if ipRE.Match([]byte(line)) || ip2RE.Match([]byte(line)) || ip3RE.Match([]byte(line)) || ip4RE.Match([]byte(line)) || ip5RE.Match([]byte(line)) || ip6RE.Match([]byte(line)) || ip7RE.Match([]byte(line)) || ip8RE.Match([]byte(line)) || ip9RE.Match([]byte(line)) || ip10RE.Match([]byte(line)) || ip11RE.Match([]byte(line)) || ip12RE.Match([]byte(line)) || ip13RE.Match([]byte(line)) || ip14RE.Match([]byte(line)) {
 			lines := strings.Split(line, " ")
 			if ipRE.Match([]byte(lines[0])) || ip2RE.Match([]byte(lines[0])) || ip3RE.Match([]byte(lines[0])) || ip4RE.Match([]byte(lines[0])) || ip5RE.Match([]byte(lines[0])) || ip6RE.Match([]byte(lines[0])) || ip7RE.Match([]byte(lines[0])) || ip8RE.Match([]byte(lines[0])) || ip9RE.Match([]byte(lines[0])) || ip10RE.Match([]byte(lines[0])) || ip11RE.Match([]byte(lines[0])) || ip12RE.Match([]byte(lines[0])) || ip13RE.Match([]byte(lines[0])) || ip14RE.Match([]byte(lines[0])) {
-				hops = append(hops, lines[0]+":"+lines[1])
+				hops = append(hops, lines[0])
 			}
 		}
 	}
