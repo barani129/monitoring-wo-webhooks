@@ -798,11 +798,11 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 					if !hop.valid {
 						if !slices.Contains(status.FailedChecks, fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s's speaker pod", hop.ip, hop.nodeName)) {
 							if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notvalid"), spec, fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s's speaker pod in cluster %s, current status is %s", hop.ip, hop.nodeName, hop.validstatus, runningHost))
+								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notvalid"), spec, fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s's speaker pod in cluster %s, current status is %s", hop.ip, hop.nodeName, runningHost, hop.validstatus))
 							}
 							status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s's speaker pod", hop.ip, hop.nodeName))
 							if spec.NotifyExternal != nil && *spec.NotifyExternal {
-								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotvalid"), fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s's speaker pod in cluster %s, current status is %s", hop.ip, hop.nodeName, hop.validstatus, runningHost))
+								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotvalid"), fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s's speaker pod in cluster %s, current status is %s", hop.ip, hop.nodeName, runningHost, hop.validstatus))
 								if err != nil {
 									log.Log.Error(err, "Failed to notify the external system")
 								}
@@ -1530,11 +1530,11 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						if !hop.valid {
 							if !slices.Contains(status.FailedChecks, fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s's speaker pod", hop.ip, hop.nodeName)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notvalid"), spec, fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s's speaker pod in cluster %s, current status is %s", hop.ip, hop.nodeName, hop.validstatus, runningHost))
+									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "notvalid"), spec, fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s's speaker pod in cluster %s, current status is %s", hop.ip, hop.nodeName, runningHost, hop.validstatus))
 								}
 								status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s's speaker pod", hop.ip, hop.nodeName))
 								if spec.NotifyExternal != nil && *spec.NotifyExternal {
-									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotvalid"), fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s's speaker pod in cluster %s, current status is %s", hop.ip, hop.nodeName, hop.validstatus, runningHost))
+									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotvalid"), fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s's speaker pod in cluster %s, current status is %s", hop.ip, hop.nodeName, runningHost, hop.validstatus))
 									if err != nil {
 										log.Log.Error(err, "Failed to notify the external system")
 									}
@@ -1572,7 +1572,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 										idx := slices.Index(status.IncidentID, incident)
 										status.IncidentID = deleteMetalElementSlice(status.IncidentID, idx)
 									}
-									err = util.SubNotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotvalid"), fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s's speaker pod in cluster %s, current status is %s", hop.ip, hop.nodeName, hop.validstatus, runningHost))
+									err = util.SubNotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", util.HandleCNString(hop.ip), util.HandleCNString(hop.nodeName), "alertnotvalid"), fmt.Sprintf("BGP neighbor %s doesn't have a valid status in worker %s's speaker pod in cluster %s, current status is %s", hop.ip, hop.nodeName, runningHost, hop.validstatus))
 									if err != nil {
 										log.Log.Error(err, "Failed to notify the external system")
 									}
