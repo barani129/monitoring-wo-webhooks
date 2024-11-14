@@ -885,13 +885,13 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				go func() {
 					defer wg.Done()
 					if !route.advertised {
-						if !slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s", route.svcname, route.namespace, route.speakPod, route.nodeName)) {
+						if !slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s", route.svcname, route.lbip, route.speakPod, route.nodeName)) {
 							if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName)), spec, fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
+								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName)), spec, fmt.Sprintf("Service %s's external IP %s in namespace %s is not advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.lbip, route.namespace, route.speakPod, route.nodeName, runningHost))
 							}
-							status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s", route.svcname, route.namespace, route.speakPod, route.nodeName))
+							status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s", route.svcname, route.lbip, route.speakPod, route.nodeName))
 							if spec.NotifyExternal != nil && *spec.NotifyExternal {
-								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alert"), fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
+								err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alert"), fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.lbip, route.speakPod, route.nodeName, runningHost))
 								if err != nil {
 									log.Log.Error(err, "Failed to notify the external system")
 								}
@@ -1685,13 +1685,13 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						defer wg.Done()
 						if !route.advertised {
 							unAdvertisedExternalIPs = append(unAdvertisedExternalIPs, route.svcname)
-							if !slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s", route.svcname, route.namespace, route.speakPod, route.nodeName)) {
+							if !slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s", route.svcname, route.lbip, route.speakPod, route.nodeName)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName)), spec, fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
+									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName)), spec, fmt.Sprintf("Service %s's external IP %s in namespace %s is not advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.lbip, route.namespace, route.speakPod, route.nodeName, runningHost))
 								}
-								status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s", route.svcname, route.namespace, route.speakPod, route.nodeName))
+								status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s", route.svcname, route.lbip, route.speakPod, route.nodeName))
 								if spec.NotifyExternal != nil && *spec.NotifyExternal {
-									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alert"), fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
+									err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "alert"), fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.lbip, route.speakPod, route.nodeName, runningHost))
 									if err != nil {
 										log.Log.Error(err, "Failed to notify the external system")
 									}
@@ -1709,11 +1709,11 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 								}
 							}
 						} else {
-							if slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s", route.svcname, route.namespace, route.speakPod, route.nodeName)) {
+							if slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s", route.svcname, route.lbip, route.speakPod, route.nodeName)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName)), spec, fmt.Sprintf("Service %s's external IP %s is now advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost))
+									util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName)), spec, fmt.Sprintf("Service %s's external IP %s is now advertised by speaker pod %s running in node %s in cluster %s", route.svcname, route.lbip, route.speakPod, route.nodeName, runningHost))
 								}
-								idx := slices.Index(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s", route.svcname, route.namespace, route.speakPod, route.nodeName))
+								idx := slices.Index(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s is not advertised by speaker pod %s running in node %s", route.svcname, route.lbip, route.speakPod, route.nodeName))
 								status.FailedChecks = deleteMetalElementSlice(status.FailedChecks, idx)
 								os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName)))
 								if spec.NotifyExternal != nil && *spec.NotifyExternal {
@@ -2084,50 +2084,50 @@ func GetSvcEndPoints(clientset kubernetes.Clientset, loadbalancersvc []string) (
 func GetBGPIPRoute(r *MetallbScanReconciler, clientset kubernetes.Clientset, metalnamespace string, speakerSelector v1.LabelSelector, lbservice []LBService, spec *monitoringv1alpha1.MetallbScanSpec, status *monitoringv1alpha1.MetallbScanStatus) ([]BGPRoute, error) {
 	var bgproute []BGPRoute
 	for _, sv := range lbservice {
-		for _, node := range sv.epNode {
-			podCount, pods, err := util.GetpodsFromNodeBasedonLabels(clientset, *node, metalnamespace, speakerSelector)
-			if err != nil {
-				log.Log.Error(err, fmt.Sprintf("unable to get pods from node %s", *node))
-
-			}
-			if podCount < 1 {
-				log.Log.Info(fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace))
-				if !slices.Contains(status.FailedChecks, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace)) {
-					util.SendEmailAlert(*node, fmt.Sprintf("/home/golanguser/.%s.%s.txt", util.HandleCNString(*node), "norunningspeaker"), spec, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace))
-					status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace))
-				}
-
-			} else {
-				if slices.Contains(status.FailedChecks, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace)) {
-					util.SendEmailRecoveredAlert(*node, fmt.Sprintf("/home/golanguser/.%s.%s.txt", util.HandleCNString(*node), "norunningspeaker"), spec, fmt.Sprintf("speaker pod found in running status in node %s in namespace %s", *node, metalnamespace))
-					idx := slices.Index(status.FailedChecks, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace))
-					status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
-					os.Remove(fmt.Sprintf("/home/golanguser/.%s.%s.txt", util.HandleCNString(*node), "norunningspeaker"))
-				}
-
-				outFile, err := os.OpenFile(fmt.Sprintf("/home/golanguser/.%s-bgpoutput.txt", pods[0]), os.O_CREATE|os.O_RDWR, 0644)
+		if sv.lbip != "" {
+			for _, node := range sv.epNode {
+				podCount, pods, err := util.GetpodsFromNodeBasedonLabels(clientset, *node, metalnamespace, speakerSelector)
 				if err != nil {
-					return nil, err
+					log.Log.Error(err, fmt.Sprintf("unable to get pods from node %s", *node))
 				}
-				writeFile(r, fmt.Sprintf("%s", "show ip bgp"), outFile, pods[0], metalnamespace)
-				exists, validBest, status, err := util.CheckLBIPRoute(outFile, sv.lbip)
-				if err != nil {
-					return nil, err
-				}
-				bgproute = append(bgproute, BGPRoute{
-					svcname:    sv.name,
-					namespace:  sv.namespace,
-					lbip:       sv.lbip,
-					speakPod:   pods[0],
-					advertised: exists,
-					validbest:  validBest,
-					status:     status,
-					nodeName:   *node,
-				})
+				if podCount < 1 {
+					log.Log.Info(fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace))
+					if !slices.Contains(status.FailedChecks, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace)) {
+						util.SendEmailAlert(*node, fmt.Sprintf("/home/golanguser/.%s.%s.txt", util.HandleCNString(*node), "norunningspeaker"), spec, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace))
+						status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace))
+					}
 
+				} else {
+					if slices.Contains(status.FailedChecks, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace)) {
+						util.SendEmailRecoveredAlert(*node, fmt.Sprintf("/home/golanguser/.%s.%s.txt", util.HandleCNString(*node), "norunningspeaker"), spec, fmt.Sprintf("speaker pod found in running status in node %s in namespace %s", *node, metalnamespace))
+						idx := slices.Index(status.FailedChecks, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace))
+						status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
+						os.Remove(fmt.Sprintf("/home/golanguser/.%s.%s.txt", util.HandleCNString(*node), "norunningspeaker"))
+					}
+
+					outFile, err := os.OpenFile(fmt.Sprintf("/home/golanguser/.%s-bgpoutput.txt", pods[0]), os.O_CREATE|os.O_RDWR, 0644)
+					if err != nil {
+						return nil, err
+					}
+					writeFile(r, fmt.Sprintf("%s", "show ip bgp"), outFile, pods[0], metalnamespace)
+					exists, validBest, status, err := util.CheckLBIPRoute(outFile, sv.lbip)
+					if err != nil {
+						return nil, err
+					}
+					bgproute = append(bgproute, BGPRoute{
+						svcname:    sv.name,
+						namespace:  sv.namespace,
+						lbip:       sv.lbip,
+						speakPod:   pods[0],
+						advertised: exists,
+						validbest:  validBest,
+						status:     status,
+						nodeName:   *node,
+					})
+
+				}
 			}
 		}
-
 	}
 
 	return bgproute, nil
