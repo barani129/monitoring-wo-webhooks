@@ -19,7 +19,7 @@ spec:
       jsonPath: .metadata.creationTimestamp
       name: CreatedAt
       type: string
-    - description: if set to true, there is no container with non-zero terminate state
+    - description: if set to true, all metallb checks are completed successfully
       jsonPath: .status.conditions[].status
       name: Ready
       type: string
@@ -27,13 +27,12 @@ spec:
       jsonPath: .status.lastRunTime
       name: LastRunTime
       type: string
-    - description: 'last successful run timestamp(in cluster''s timezone) where cluster
-        is error free '
+    - description: last successful run timestamp(in cluster's timezone) when metallb
+        checks completed successfully
       jsonPath: .status.lastSuccessfulRunTime
       name: LastSuccessfulRunTime
       type: string
-    - description: last successful run (where there is no failed containers) timestamp(in
-        cluster's timezone)
+    - description: last successful run timestamp(in cluster's timezone)
       jsonPath: .status.healthy
       name: Healthy
       type: string
@@ -63,7 +62,7 @@ spec:
             description: MetallbScanSpec defines the desired state of MetallbScan
             properties:
               checkInterval:
-                description: frequency of the check. If not set, it defaults to 2
+                description: frequency of the check. If not set, it defaults to 30
                   mins.
                 format: int64
                 type: integer
@@ -71,7 +70,7 @@ spec:
                 description: Target cluster name for using the cluster name in notifications
                 type: string
               email:
-                description: Target user's email for cluster status notification
+                description: Target user's email for metallb scan status change notification
                 type: string
               externalData:
                 description: Data to be sent to the external system in the form of

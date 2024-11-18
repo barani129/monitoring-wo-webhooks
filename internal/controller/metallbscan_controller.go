@@ -30,7 +30,7 @@ import (
 	cidrranger "github.com/yl2chen/cidranger"
 	metal1 "go.universe.tf/metallb/api/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -47,6 +47,7 @@ import (
 
 	monitoringv1alpha1 "github.com/barani129/monitoring-wo-webhooks/api/v1alpha1"
 	"github.com/barani129/monitoring-wo-webhooks/internal/metallbscan/util"
+	tunedv1 "github.com/openshift/cluster-node-tuning-operator/pkg/apis/tuned/v1"
 )
 
 // MetallbScanReconciler reconciles a MetallbScan object
@@ -373,7 +374,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		data = configmap.Data
 	}
 
-	// report gives feedback by updating the Ready condition of the Port scan
+	// report gives feedback by updating the Ready condition of the metallb scan
 	report := func(conditionStatus monitoringv1alpha1.ConditionStatus, message string, err error) {
 		eventType := corev1.EventTypeNormal
 		if err != nil {
@@ -465,10 +466,26 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	var wg sync.WaitGroup
 	if status.LastRunTime == nil {
+		// Check tuned profiles
+		_, affprofiles, err := retrieveTunedProfiles(*clientset)
+		if err != nil && k8serrors.IsNotFound(err) {
+			log.Log.Info("no tuned.openshift.io profiles configured")
+		} else if err != nil {
+			log.Log.Info("Error retrieving tuned.openshift.io profiles")
+		} else {
+			if len(affprofiles) > 0 {
+				for _, prof := range affprofiles {
+					profile := strings.Split(prof, ":")
+					if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+						util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", profile[0], profile[1]), spec, fmt.Sprintf("Tuned profile %s in node %s is either degraded or not applied in cluster %s", profile[0], profile[1], runningHost))
+					}
+				}
+			}
+		}
 		log.Log.Info(fmt.Sprintf("Staring metallbscan healthchecks in target cluster %s", runningHost))
 		log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
 		mcpRunning, mcpName, err := isMcpUpdating(*clientset)
-		if err != nil && errors.IsNotFound(err) {
+		if err != nil && k8serrors.IsNotFound(err) {
 			log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
 		} else if err != nil {
 			log.Log.Error(err, "unable to retrieve machineconfigpools.machineconfiguration.openshift.io/v1")
@@ -524,7 +541,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 		log.Log.Info("Configuration checks: Checking if load balancer services IP are part of configured ipaddresspools.metallb.io/v1beta1")
 		bgpPeer, err := GetBGPIPPoolsPeer(*clientset, lbsvcs, metallbNamespace)
-		if err != nil && errors.IsNotFound(err) {
+		if err != nil && k8serrors.IsNotFound(err) {
 			log.Log.Error(err, fmt.Sprintf("Unable to retrieve ipaddresspools.metallb.io/v1beta1 from namespace %s in cluster %s", metallbNamespace, runningHost))
 		} else if err != nil {
 			log.Log.Error(err, "problems with retrieving ipaddresspools.metallb.io/v1beta1")
@@ -566,7 +583,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 		log.Log.Info("Configuration checks: Checking if IP addresspools.metallb.io/v1 are configured to be advertised bgpadvertisements.metallb.io/v1beta1")
 		bgpAd, err := GetBGPIPAd(*clientset, bgpPeer, metallbNamespace)
-		if err != nil && errors.IsNotFound(err) {
+		if err != nil && k8serrors.IsNotFound(err) {
 			log.Log.Error(err, fmt.Sprintf("Unable to retrieve bgpadvertisements.metallb.io/v1beta1 from namespace %s in cluster %s", metallbNamespace, runningHost))
 		} else if err != nil {
 			log.Log.Error(err, "problems with retrieving bgpadvertisements.metallb.io/v1beta1")
@@ -635,7 +652,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 		log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
 		mcpRunning, mcpName, err = isMcpUpdating(*clientset)
-		if err != nil && errors.IsNotFound(err) {
+		if err != nil && k8serrors.IsNotFound(err) {
 			log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
 		} else if err != nil {
 			log.Log.Error(err, "unable to retrieve machineconfigpools.machineconfiguration.openshift.io/v1")
@@ -743,7 +760,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 
 		mcpRunning, mcpName, err = isMcpUpdating(*clientset)
-		if err != nil && errors.IsNotFound(err) {
+		if err != nil && k8serrors.IsNotFound(err) {
 			log.Log.Info("machineconfigpools.openshift.io/v1 is not configured in this cluster")
 		} else if err != nil {
 			log.Log.Error(err, "unable to retrieve machineconfigpools.openshift.io/v1")
@@ -856,7 +873,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 		log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
 		mcpRunning, mcpName, err = isMcpUpdating(*clientset)
-		if err != nil && errors.IsNotFound(err) {
+		if err != nil && k8serrors.IsNotFound(err) {
 			log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
 		} else if err != nil {
 			log.Log.Error(err, "unable to retrieve machineconfigpools.machineconfiguration.openshift.io/v1")
@@ -956,10 +973,40 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		pastTime := time.Now().Add(-1 * defaultHealthCheckIntervalMetal)
 		timeDiff := status.LastRunTime.Time.Before(pastTime)
 		if timeDiff {
+			// Check tuned profiles
+			// ignore errors with tuned profile, just need to check the status
+			allProfiles, affprofiles, err := retrieveTunedProfiles(*clientset)
+			if err != nil && k8serrors.IsNotFound(err) {
+				log.Log.Info("no tuned.openshift.io profiles configured")
+			} else if err != nil {
+				log.Log.Info("Error retrieving tuned.openshift.io profiles")
+			} else {
+				if len(affprofiles) > 0 {
+					for _, prof := range affprofiles {
+						profile := strings.Split(prof, ":")
+						if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+							util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", profile[0], profile[1]), spec, fmt.Sprintf("Tuned profile %s in node %s is either degraded or not applied in cluster %s", profile[0], profile[1], runningHost))
+						}
+					}
+					for _, prof := range allProfiles {
+						if !slices.Contains(affprofiles, prof) {
+							profile := strings.Split(prof, ":")
+							if _, err := os.Stat(fmt.Sprintf("/home/golanguser/.%s-%s.txt", profile[0], profile[1])); os.IsNotExist(err) {
+								//
+							} else {
+								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+									util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", profile[0], profile[1]), spec, fmt.Sprintf("Tuned profile %s in node %s is now healthy in cluster %s", profile[0], profile[1], runningHost))
+								}
+								os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s.txt", profile[0], profile[1]))
+							}
+						}
+					}
+				}
+			}
 			log.Log.Info("Staring metallbscan healthchecks as configured time interval has elasped")
 			log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
 			mcpRunning, mcpName, err := isMcpUpdating(*clientset)
-			if err != nil && errors.IsNotFound(err) {
+			if err != nil && k8serrors.IsNotFound(err) {
 				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
 			} else if err != nil {
 				log.Log.Error(err, "unable to retrieve machineconfigpools.machineconfiguration.openshift.io/v1")
@@ -1054,7 +1101,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 			log.Log.Info("Configuration checks: Checking if load balancer services IP are part of configured ipaddresspools.metallb.io/v1beta1")
 			bgpPeer, err := GetBGPIPPoolsPeer(*clientset, lbsvcs, metallbNamespace)
-			if err != nil && errors.IsNotFound(err) {
+			if err != nil && k8serrors.IsNotFound(err) {
 				log.Log.Error(err, fmt.Sprintf("Unable to retrieve ipaddresspools.metallb.io/v1beta1 from namespace %s in cluster %s", metallbNamespace, runningHost))
 			} else if err != nil {
 				log.Log.Error(err, "problems with retrieving ipaddresspools.metallb.io/v1beta1")
@@ -1124,7 +1171,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 			log.Log.Info("Configuration checks: Checking if IP addresspools.metallb.io/v1 are configured to be advertised bgpadvertisements.metallb.io/v1beta1")
 			bgpAd, err := GetBGPIPAd(*clientset, bgpPeer, metallbNamespace)
-			if err != nil && errors.IsNotFound(err) {
+			if err != nil && k8serrors.IsNotFound(err) {
 				log.Log.Error(err, fmt.Sprintf("Unable to retrieve bgpadvertisements.metallb.io/v1beta1 from namespace %s in cluster %s", metallbNamespace, runningHost))
 			} else if err != nil {
 				log.Log.Error(err, "problems with retrieving bgpadvertisements.metallb.io/v1beta1")
@@ -1250,7 +1297,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 			log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
 			mcpRunning, mcpName, err = isMcpUpdating(*clientset)
-			if err != nil && errors.IsNotFound(err) {
+			if err != nil && k8serrors.IsNotFound(err) {
 				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
 			} else if err != nil {
 				log.Log.Error(err, "unable to retrieve machineconfigpools.machineconfiguration.openshift.io/v1")
@@ -1438,7 +1485,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 			log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
 			mcpRunning, mcpName, err = isMcpUpdating(*clientset)
-			if err != nil && errors.IsNotFound(err) {
+			if err != nil && k8serrors.IsNotFound(err) {
 				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
 			} else if err != nil {
 				log.Log.Error(err, "unable to retrieve machineconfigpools.machineconfiguration.openshift.io/v1")
@@ -1645,7 +1692,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			CheckIfBGPHopExists(r, *clientset, metallbNamespace, nodeSelector, speakerSelector, spec, status, runningHost)
 			log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
 			mcpRunning, mcpName, err = isMcpUpdating(*clientset)
-			if err != nil && errors.IsNotFound(err) {
+			if err != nil && k8serrors.IsNotFound(err) {
 				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
 			} else if err != nil {
 				log.Log.Error(err, "unable to retrieve machineconfigpools.machineconfiguration.openshift.io/v1")
@@ -2344,4 +2391,28 @@ func checkBGPHopStatus(outFile *os.File, hop string) (BGPHopStatus, error) {
 
 func deleteMetalElementSlice(slice []string, index int) []string {
 	return append(slice[:index], slice[index+1:]...)
+}
+
+func retrieveTunedProfiles(clientset kubernetes.Clientset) (allProfiles []string, affectedProfiles []string, err error) {
+	tunedProList := tunedv1.ProfileList{}
+	err = clientset.RESTClient().Get().AbsPath("/apis/tuned.openshift.io/v1/profiles").Do(context.Background()).Into(&tunedProList)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, prof := range tunedProList.Items {
+		allProfiles = append(allProfiles, prof.Spec.Config.TunedProfile+":"+prof.Name)
+		for _, cond := range prof.Status.Conditions {
+			if cond.Type == "Applied" {
+				if cond.Status == "False" {
+					affectedProfiles = append(affectedProfiles, prof.Spec.Config.TunedProfile+":"+prof.Name)
+				}
+			}
+			if cond.Type == "Degraded" {
+				if cond.Status == "True" {
+					affectedProfiles = append(affectedProfiles, prof.Spec.Config.TunedProfile+":"+prof.Name)
+				}
+			}
+		}
+	}
+	return allProfiles, affectedProfiles, nil
 }
