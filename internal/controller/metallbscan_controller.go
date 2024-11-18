@@ -303,6 +303,7 @@ func (r *MetallbScanReconciler) newIssuer() (client.Object, error) {
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
 //+kubebuilder:rbac:groups="metallb.io",resources=ipaddresspools,verbs=get;list;watch
 //+kubebuilder:rbac:groups="metallb.io",resources=bgpadvertisements,verbs=get;list;watch
+//+kubebuilder:rbac:groups="tuned.openshift.io",resources=profiles,verbs=get;list;watch
 //+kubebuilder:rbac:groups="machineconfiguration.openshift.io",resources=machineconfigpools,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch;get
 
