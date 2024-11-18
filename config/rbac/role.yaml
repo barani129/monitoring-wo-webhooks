@@ -227,3 +227,11 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - tuned.openshift.io
+  resources:
+  - profiles
+  verbs:
+  - get
+  - list
+  - watch
