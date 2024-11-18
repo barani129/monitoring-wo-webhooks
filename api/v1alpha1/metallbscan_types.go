@@ -57,7 +57,7 @@ type MetallbScanSpec struct {
 	// +optional
 	SuspendEmailAlert *bool `json:"suspendEmailAlert,omitempty"`
 
-	// Target user's email for cluster status notification
+	// Target user's email for metallb scan status change notification
 	// +optional
 	Email string `json:"email,omitempty"`
 
@@ -89,7 +89,7 @@ type MetallbScanSpec struct {
 	// +optional
 	ExternalSecret string `json:"externalSecret,omitempty"`
 
-	// frequency of the check. If not set, it defaults to 2 mins.
+	// frequency of the check. If not set, it defaults to 30 mins.
 	// +optional
 	CheckInterval *int64 `json:"checkInterval,omitempty"`
 }
@@ -130,10 +130,10 @@ type MetallbScanStatus struct {
 
 // MetallbScan is the Schema for the metallbscans API
 // +kubebuilder:printcolumn:name="CreatedAt",type="string",JSONPath=".metadata.creationTimestamp",description="object creation timestamp(in cluster's timezone)"
-// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[].status",description="if set to true, there is no container with non-zero terminate state"
+// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[].status",description="if set to true, all metallb checks are completed successfully"
 // +kubebuilder:printcolumn:name="LastRunTime",type="string",JSONPath=".status.lastRunTime",description="last healthcheck run timestamp(in cluster's timezone)"
-// +kubebuilder:printcolumn:name="LastSuccessfulRunTime",type="string",JSONPath=".status.lastSuccessfulRunTime",description="last successful run timestamp(in cluster's timezone) where cluster is error free "
-// +kubebuilder:printcolumn:name="Healthy",type="string",JSONPath=".status.healthy",description="last successful run (where there is no failed containers) timestamp(in cluster's timezone)"
+// +kubebuilder:printcolumn:name="LastSuccessfulRunTime",type="string",JSONPath=".status.lastSuccessfulRunTime",description="last successful run timestamp(in cluster's timezone) when metallb checks completed successfully"
+// +kubebuilder:printcolumn:name="Healthy",type="string",JSONPath=".status.healthy",description="last successful run timestamp(in cluster's timezone)"
 type MetallbScan struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -170,13 +170,12 @@ type MetallbScanCondition struct {
 	Message string `json:"message"`
 }
 
-// ManagedConditionType represents a managed cluster condition value.
+// ManagedConditionType represents a managed metallb scan CR condition value.
 type MetallbScanConditionType string
 
 const (
-	// MetallbScanConditionReady represents the fact that a given managed cluster condition
-	// is in reachable from the ACM/source cluster.
-	// If the `status` of this condition is `False`, managed cluster is unreachable
+	// MetallbScanConditionReady represents the fact that set of metallb checks are healthy
+	// If the `status` of this condition is `False`, if any checks fails.
 	MetallbScanConditionReady MetallbScanConditionType = "Ready"
 )
 
