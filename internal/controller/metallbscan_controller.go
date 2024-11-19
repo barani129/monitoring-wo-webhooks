@@ -468,23 +468,23 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	var wg sync.WaitGroup
 	if status.LastRunTime == nil {
 		// Check tuned profiles
-		_, affprofiles, err := retrieveTunedProfiles(*clientset)
-		if err != nil && k8serrors.IsNotFound(err) {
-			log.Log.Info("no tuned.openshift.io profiles configured")
-		} else if err != nil {
-			log.Log.Info("Error retrieving tuned.openshift.io profiles")
-		} else {
-			if len(affprofiles) > 0 {
-				for _, prof := range affprofiles {
-					profile := strings.Split(prof, ":")
-					if !slices.Contains(status.FailedChecks, fmt.Sprintf("Tuned profile %s in node %s is either degraded or not applied", profile[0], profile[1])) {
-						if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-							util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", profile[0], profile[1]), spec, fmt.Sprintf("Tuned profile %s in node %s is either degraded or not applied in cluster %s", profile[0], profile[1], runningHost))
-						}
-					}
-				}
-			}
-		}
+		// _, affprofiles, err := retrieveTunedProfiles(*clientset)
+		// if err != nil && k8serrors.IsNotFound(err) {
+		// 	log.Log.Info("no tuned.openshift.io profiles configured")
+		// } else if err != nil {
+		// 	log.Log.Info("Error retrieving tuned.openshift.io profiles")
+		// } else {
+		// 	if len(affprofiles) > 0 {
+		// 		for _, prof := range affprofiles {
+		// 			profile := strings.Split(prof, ":")
+		// 			if !slices.Contains(status.FailedChecks, fmt.Sprintf("Tuned profile %s in node %s is either degraded or not applied", profile[0], profile[1])) {
+		// 				if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+		// 					util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", profile[0], profile[1]), spec, fmt.Sprintf("Tuned profile %s in node %s is either degraded or not applied in cluster %s", profile[0], profile[1], runningHost))
+		// 				}
+		// 			}
+		// 		}
+		// 	}
+		// }
 		log.Log.Info(fmt.Sprintf("Staring metallbscan healthchecks in target cluster %s", runningHost))
 		log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
 		mcpRunning, mcpName, err := isMcpUpdating(*clientset)
@@ -976,38 +976,38 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		pastTime := time.Now().Add(-1 * defaultHealthCheckIntervalMetal)
 		timeDiff := status.LastRunTime.Time.Before(pastTime)
 		if timeDiff {
-			// Check tuned profiles
-			// ignore errors with tuned profile, just need to check the status
-			allProfiles, affprofiles, err := retrieveTunedProfiles(*clientset)
-			if err != nil && k8serrors.IsNotFound(err) {
-				log.Log.Info("no tuned.openshift.io profiles configured")
-			} else if err != nil {
-				log.Log.Info("Error retrieving tuned.openshift.io profiles")
-			} else {
-				if len(affprofiles) > 0 {
-					for _, prof := range affprofiles {
-						profile := strings.Split(prof, ":")
-						if !slices.Contains(status.FailedChecks, fmt.Sprintf("Tuned profile %s in node %s is either degraded or not applied", profile[0], profile[1])) {
-							if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", profile[0], profile[1]), spec, fmt.Sprintf("Tuned profile %s in node %s is either degraded or not applied in cluster %s", profile[0], profile[1], runningHost))
-							}
-						}
-					}
-					for _, prof := range allProfiles {
-						if !slices.Contains(affprofiles, prof) {
-							profile := strings.Split(prof, ":")
-							if slices.Contains(status.FailedChecks, fmt.Sprintf("Tuned profile %s in node %s is either degraded or not applied", profile[0], profile[1])) {
-								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", profile[0], profile[1]), spec, fmt.Sprintf("Tuned profile %s in node %s is now healthy in cluster %s", profile[0], profile[1], runningHost))
-								}
-								idx := slices.Index(status.FailedChecks, fmt.Sprintf("Tuned profile %s in node %s is either degraded or not applied", profile[0], profile[1]))
-								status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
-								os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s.txt", profile[0], profile[1]))
-							}
-						}
-					}
-				}
-			}
+			// // Check tuned profiles
+			// // ignore errors with tuned profile, just need to check the status
+			// allProfiles, affprofiles, err := retrieveTunedProfiles(*clientset)
+			// if err != nil && k8serrors.IsNotFound(err) {
+			// 	log.Log.Info("no tuned.openshift.io profiles configured")
+			// } else if err != nil {
+			// 	log.Log.Info("Error retrieving tuned.openshift.io profiles")
+			// } else {
+			// 	if len(affprofiles) > 0 {
+			// 		for _, prof := range affprofiles {
+			// 			profile := strings.Split(prof, ":")
+			// 			if !slices.Contains(status.FailedChecks, fmt.Sprintf("Tuned profile %s in node %s is either degraded or not applied", profile[0], profile[1])) {
+			// 				if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+			// 					util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", profile[0], profile[1]), spec, fmt.Sprintf("Tuned profile %s in node %s is either degraded or not applied in cluster %s", profile[0], profile[1], runningHost))
+			// 				}
+			// 			}
+			// 		}
+			// 		for _, prof := range allProfiles {
+			// 			if !slices.Contains(affprofiles, prof) {
+			// 				profile := strings.Split(prof, ":")
+			// 				if slices.Contains(status.FailedChecks, fmt.Sprintf("Tuned profile %s in node %s is either degraded or not applied", profile[0], profile[1])) {
+			// 					if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+			// 						util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", profile[0], profile[1]), spec, fmt.Sprintf("Tuned profile %s in node %s is now healthy in cluster %s", profile[0], profile[1], runningHost))
+			// 					}
+			// 					idx := slices.Index(status.FailedChecks, fmt.Sprintf("Tuned profile %s in node %s is either degraded or not applied", profile[0], profile[1]))
+			// 					status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
+			// 					os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s.txt", profile[0], profile[1]))
+			// 				}
+			// 			}
+			// 		}
+			// 	}
+			// }
 			log.Log.Info("Staring metallbscan healthchecks as configured time interval has elasped")
 			log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
 			mcpRunning, mcpName, err := isMcpUpdating(*clientset)
