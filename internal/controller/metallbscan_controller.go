@@ -477,8 +477,10 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			if len(affprofiles) > 0 {
 				for _, prof := range affprofiles {
 					profile := strings.Split(prof, ":")
-					if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-						util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", profile[0], profile[1]), spec, fmt.Sprintf("Tuned profile %s in node %s is either degraded or not applied in cluster %s", profile[0], profile[1], runningHost))
+					if !slices.Contains(status.FailedChecks, fmt.Sprintf("Tuned profile %s in node %s is either degraded or not applied", profile[0], profile[1])) {
+						if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+							util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", profile[0], profile[1]), spec, fmt.Sprintf("Tuned profile %s in node %s is either degraded or not applied in cluster %s", profile[0], profile[1], runningHost))
+						}
 					}
 				}
 			}
@@ -985,19 +987,21 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				if len(affprofiles) > 0 {
 					for _, prof := range affprofiles {
 						profile := strings.Split(prof, ":")
-						if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-							util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", profile[0], profile[1]), spec, fmt.Sprintf("Tuned profile %s in node %s is either degraded or not applied in cluster %s", profile[0], profile[1], runningHost))
+						if !slices.Contains(status.FailedChecks, fmt.Sprintf("Tuned profile %s in node %s is either degraded or not applied", profile[0], profile[1])) {
+							if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+								util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", profile[0], profile[1]), spec, fmt.Sprintf("Tuned profile %s in node %s is either degraded or not applied in cluster %s", profile[0], profile[1], runningHost))
+							}
 						}
 					}
 					for _, prof := range allProfiles {
 						if !slices.Contains(affprofiles, prof) {
 							profile := strings.Split(prof, ":")
-							if _, err := os.Stat(fmt.Sprintf("/home/golanguser/.%s-%s.txt", profile[0], profile[1])); os.IsNotExist(err) {
-								//
-							} else {
+							if slices.Contains(status.FailedChecks, fmt.Sprintf("Tuned profile %s in node %s is either degraded or not applied", profile[0], profile[1])) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
 									util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", profile[0], profile[1]), spec, fmt.Sprintf("Tuned profile %s in node %s is now healthy in cluster %s", profile[0], profile[1], runningHost))
 								}
+								idx := slices.Index(status.FailedChecks, fmt.Sprintf("Tuned profile %s in node %s is either degraded or not applied", profile[0], profile[1]))
+								status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
 								os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s.txt", profile[0], profile[1]))
 							}
 						}
@@ -1315,7 +1319,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			} else {
 				if slices.Contains(status.FailedChecks, "MachineConfigPool update is in progress") {
 					if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-						util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool %s update is not in progress in cluster %s", mcpName, runningHost))
+						util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool update is not in progress in cluster %s", runningHost))
 					}
 					idx := slices.Index(status.FailedChecks, "MachineConfigPool update is in progress")
 					status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
@@ -1790,7 +1794,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 							nonBestRoute = append(nonBestRoute, route.svcname)
 							if !slices.Contains(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s in namespace %s doesn't have the best route advertised by speaker pod %s running in node %s", route.svcname, route.lbip, route.namespace, route.speakPod, route.nodeName)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "nonbest"), spec, fmt.Sprintf("Service %s's external IP %s doesn't have the best route advertised by speaker pod %s running in node %s in cluster %s, current status %s", route.svcname, route.namespace, route.speakPod, route.nodeName, runningHost, route.status))
+									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s-%s.txt", route.svcname, route.speakPod, util.HandleCNString(route.nodeName), "nonbest"), spec, fmt.Sprintf("Service %s's external IP %s in namespace %s doesn't have the best route advertised by speaker pod %s running in node %s in cluster %s, current status %s", route.svcname, route.lbip, route.namespace, route.speakPod, route.nodeName, runningHost, route.status))
 								}
 								status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("Service %s's external IP %s in namespace %s doesn't have the best route advertised by speaker pod %s running in node %s", route.svcname, route.lbip, route.namespace, route.speakPod, route.nodeName))
 								if spec.NotifyExternal != nil && *spec.NotifyExternal {

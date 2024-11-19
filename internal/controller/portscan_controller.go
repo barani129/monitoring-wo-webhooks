@@ -119,7 +119,7 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 	var username []byte
 	var password []byte
 	var data map[string]string
-	if *clusterSpec.NotifyExtenal {
+	if clusterSpec.NotifyExtenal != nil && *clusterSpec.NotifyExtenal {
 		if err := r.Get(ctx, secretName, &secret); err != nil {
 			return ctrl.Result{}, fmt.Errorf("%w, secret name: %s, reason: %v", errGetAuthSecret, secretName, err)
 		}
