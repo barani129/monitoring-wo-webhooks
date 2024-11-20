@@ -365,7 +365,7 @@ func ReadFile(filename string) (string, error) {
 
 func SendEmailAlert(nodeName string, filename string, spec *v1alpha1.MetallbScanSpec, alert string) {
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		message := fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: Alert from %s" "" "Alert: %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", nodeName, alert, spec.Email, spec.RelayHost, spec.Email)
+		message := fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: MetallbScan alert from %s" "" "Alert: %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", nodeName, alert, spec.Email, spec.RelayHost, spec.Email)
 		cmd3 := exec.Command("/bin/bash", "-c", message)
 		err := cmd3.Run()
 		if err != nil {
