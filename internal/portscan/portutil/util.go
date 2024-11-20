@@ -2,6 +2,7 @@ package portutil
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"crypto/tls"
 	"encoding/base64"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/barani129/monitoring-wo-webhooks/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -93,6 +95,40 @@ type RemResponse struct {
 	CorrelationNode     string `json:"correlationNode"`
 	BaseNode            string `json:"baseNode"`
 	Enrichment          any    `json:"Enrichment"`
+}
+
+type OcpAPIConfig struct {
+	APIServerArguments struct {
+		AuditLogFormat         []string `json:"audit-log-format"`
+		AuditLogMaxbackup      []string `json:"audit-log-maxbackup"`
+		AuditLogMaxsize        []string `json:"audit-log-maxsize"`
+		AuditLogPath           []string `json:"audit-log-path"`
+		AuditPolicyFile        []string `json:"audit-policy-file"`
+		EtcdHealthcheckTimeout []string `json:"etcd-healthcheck-timeout"`
+		EtcdReadycheckTimeout  []string `json:"etcd-readycheck-timeout"`
+		FeatureGates           []string `json:"feature-gates"`
+		ShutdownDelayDuration  []string `json:"shutdown-delay-duration"`
+		ShutdownSendRetryAfter []string `json:"shutdown-send-retry-after"`
+	} `json:"apiServerArguments"`
+	APIServers struct {
+		PerGroupOptions []any `json:"perGroupOptions"`
+	} `json:"apiServers"`
+	APIVersion    string `json:"apiVersion"`
+	Kind          string `json:"kind"`
+	ProjectConfig struct {
+		ProjectRequestMessage string `json:"projectRequestMessage"`
+	} `json:"projectConfig"`
+	RoutingConfig struct {
+		Subdomain string `json:"subdomain"`
+	} `json:"routingConfig"`
+	ServingInfo struct {
+		BindNetwork   string   `json:"bindNetwork"`
+		CipherSuites  []string `json:"cipherSuites"`
+		MinTLSVersion string   `json:"minTLSVersion"`
+	} `json:"servingInfo"`
+	StorageConfig struct {
+		Urls []string `json:"urls"`
+	} `json:"storageConfig"`
 }
 
 func GetSpecAndStatus(PortScan client.Object) (*v1alpha1.PortScanSpec, *v1alpha1.PortScanStatus, error) {
@@ -321,46 +357,61 @@ func basicAuth(username, password string) string {
 	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
 
-func SendEmailAlert(target string, filename string, spec *v1alpha1.PortScanSpec, host string) {
-	targets := strings.SplitN(target, ":", 2)
+func SendEmailAlert(nodeName string, filename string, spec *v1alpha1.PortScanSpec, alert string) {
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		message := fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: Port unreachability alert from %s" "target %s is unreachable on port %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", host, targets[0], targets[1], spec.Email, spec.RelayHost, spec.Email)
+		message := fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: Alert from %s" "" "Alert: %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", nodeName, alert, spec.Email, spec.RelayHost, spec.Email)
 		cmd3 := exec.Command("/bin/bash", "-c", message)
 		err := cmd3.Run()
 		if err != nil {
 			fmt.Printf("Failed to send the alert: %s", err)
 		}
 		writeFile(filename, "sent")
-
 	} else {
 		data, _ := ReadFile(filename)
 		if data != "sent" {
-			message := fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: Port unreachability alert from %s" "target %s is unreachable on port %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", host, targets[0], targets[1], spec.Email, spec.RelayHost, spec.Email)
+			message := fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: PortScan alert from %s" "" "Alert: %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", nodeName, alert, spec.Email, spec.RelayHost, spec.Email)
+			cmd3 := exec.Command("/bin/bash", "-c", message)
+			err := cmd3.Run()
+			if err != nil {
+				fmt.Printf("Failed to send the alert: %s", err)
+			}
+			os.Truncate(filename, 0)
+			writeFile(filename, "sent")
+		}
+	}
+}
+
+func GetAPIName(clientset kubernetes.Clientset) (domain string, err error) {
+	var apiconfig OcpAPIConfig
+	cm, err := clientset.CoreV1().ConfigMaps("openshift-apiserver").Get(context.Background(), "config", metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	data := cm.Data["config.yaml"]
+	err = json.Unmarshal([]byte(data), &apiconfig)
+	if err != nil {
+		return "", err
+	}
+	return apiconfig.RoutingConfig.Subdomain, nil
+}
+
+func SendEmailRecoveredAlert(nodeName string, filename string, spec *v1alpha1.PortScanSpec, commandToRun string) {
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		//
+	} else {
+		data, err := ReadFile(filename)
+		if err != nil {
+			fmt.Printf("Failed to send the alert: %s", err)
+		}
+		if data == "sent" {
+			message := fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: PortScan alert from %s" ""  "Resolved: %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", nodeName, commandToRun, spec.Email, spec.RelayHost, spec.Email)
 			cmd3 := exec.Command("/bin/bash", "-c", message)
 			err := cmd3.Run()
 			if err != nil {
 				fmt.Printf("Failed to send the alert: %s", err)
 			}
 		}
-
 	}
-}
-
-func SendEmailReachableAlert(target string, filename string, spec *v1alpha1.PortScanSpec, host string) {
-	targets := strings.SplitN(target, ":", 2)
-	data, err := ReadFile(filename)
-	if err != nil {
-		fmt.Println(err)
-	}
-	if data == "sent" {
-		message := fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: Port reachability alert from %s" "target %s is reachable again on port %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", host, targets[0], targets[1], spec.Email, spec.RelayHost, spec.Email)
-		cmd3 := exec.Command("/bin/bash", "-c", message)
-		err := cmd3.Run()
-		if err != nil {
-			fmt.Printf("Failed to send the alert: %s", err)
-		}
-	}
-
 }
 
 func writeFile(filename string, data string) error {
