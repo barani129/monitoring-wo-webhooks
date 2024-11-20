@@ -398,7 +398,8 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 				}
 			}
 			if isAffected {
-				return ctrl.Result{}, fmt.Errorf("one or more VMIs are running on the same node in target namespace")
+				log.Log.Info("one or more VMIs are running on the same node, exiting and requeuing...")
+				return ctrl.Result{RequeueAfter: defaultHealthCheckIntervalVm}, fmt.Errorf("one or more VMIs are running on the same node in target namespace")
 			}
 			now := metav1.Now()
 			vmStatus.LastPollTime = &now
