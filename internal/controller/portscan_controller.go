@@ -173,7 +173,7 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 	}
 	if clusterSpec.Suspend != nil && *clusterSpec.Suspend {
 		log.Log.Info("port scan is suspended, skipping..")
-		return ctrl.Result{}, nil
+		return ctrl.Result{RequeueAfter: defaultHealthCheckIntervalPort}, nil
 	}
 	config, err := rest.InClusterConfig()
 	if err != nil {
