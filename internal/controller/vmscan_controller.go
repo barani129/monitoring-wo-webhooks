@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -175,7 +176,7 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	}
 	if vmSpec.Suspend != nil && *vmSpec.Suspend {
 		log.Log.Info("vm scan is suspended, skipping..")
-		return ctrl.Result{}, nil
+		return ctrl.Result{RequeueAfter: defaultHealthCheckIntervalVm}, nil
 	}
 	if vmStatus.LastPollTime == nil {
 		log.Log.Info("triggering VMI migration check")
@@ -186,7 +187,7 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 				log.Log.Info("unable to get the Virtual Machine Instance Migrations Lists in target namespace")
 			}
 			for _, vm := range vmList.Items {
-				if vm.Name != "" {
+				if vm.Name != "" && strings.Contains(vm.Name, "controller") {
 					if vm.Status.MigrationState != nil {
 						if !vm.Status.MigrationState.Completed {
 							if !slices.Contains(vmStatus.Migrations, vm.Name+":"+ns) {
@@ -211,7 +212,9 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 				return ctrl.Result{}, fmt.Errorf("unable to get the Virtual Machine Instance Lists in target namespace %s", ns)
 			}
 			for _, vmi := range result.Items {
-				vmiNodes[vmi.Status.NodeName] = append(vmiNodes[vmi.Status.NodeName], vmi.Name)
+				if vmi.Name != "" && strings.Contains(vmi.Name, "controller") {
+					vmiNodes[vmi.Status.NodeName] = append(vmiNodes[vmi.Status.NodeName], vmi.Name)
+				}
 			}
 			for _, node := range nodeList.Items {
 				vminodelist := vmiNodes[node.Name]
@@ -228,7 +231,7 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 					if vmSpec.NotifyExtenal != nil && *vmSpec.NotifyExtenal && !vmStatus.ExternalNotified {
 						err := vmUtil.NotifyExternalSystem(data, "firing", ns, node.Name, vmSpec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-ext.txt", ns, node.Name), vmStatus)
 						if err != nil {
-							log.Log.Error(err, "Failed to notify the external system")
+							log.Log.Info(fmt.Sprintf("Failed to notify the external system with err %s", err.Error()))
 						}
 						now := metav1.Now()
 						vmStatus.ExternalNotifiedTime = &now
@@ -272,7 +275,7 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 							}
 							err = vmUtil.SubNotifyExternalSystem(data, "resolved", ns, node.Name, vmSpec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s.txt", ns, node.Name), vmStatus)
 							if err != nil {
-								log.Log.Error(err, "Failed to notify the external system")
+								log.Log.Info(fmt.Sprintf("Failed to notify the external system with err %s", err.Error()))
 							}
 							now := metav1.Now()
 							vmStatus.ExternalNotifiedTime = &now
@@ -284,7 +287,8 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 			}
 		}
 		if isAffected {
-			return ctrl.Result{}, fmt.Errorf("one or more VMIs are running on the same node in target namespace")
+			log.Log.Info("one or more VMIs are running on the same node")
+			return ctrl.Result{RequeueAfter: defaultHealthCheckIntervalVm}, fmt.Errorf("one or more VMIs are running on the same node in target namespace")
 		}
 		now := metav1.Now()
 		vmStatus.LastPollTime = &now
@@ -302,7 +306,7 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 					log.Log.Info("unable to get the Virtual Machine Instance Migrations Lists in target namespace")
 				}
 				for _, vm := range vmList.Items {
-					if vm.Name != "" {
+					if vm.Name != "" && strings.Contains(vm.Name, "controller") {
 						if vm.Status.MigrationState != nil {
 							if !vm.Status.MigrationState.Completed {
 								if !slices.Contains(vmStatus.Migrations, vm.Name+":"+ns) {
@@ -327,7 +331,9 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 					return ctrl.Result{}, fmt.Errorf("unable to get the Virtual Machine Instance Lists in target namespace %s", ns)
 				}
 				for _, vmi := range result.Items {
-					vmiNodes[vmi.Status.NodeName] = append(vmiNodes[vmi.Status.NodeName], vmi.Name)
+					if vmi.Name != "" && strings.Contains(vmi.Name, "controller") {
+						vmiNodes[vmi.Status.NodeName] = append(vmiNodes[vmi.Status.NodeName], vmi.Name)
+					}
 				}
 				for _, node := range nodeList.Items {
 					vminodelist := vmiNodes[node.Name]
@@ -337,30 +343,31 @@ func (r *VmScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 							if !slices.Contains(vmStatus.AffectedTargets, node.Name+":ns:"+vmi) {
 								vmStatus.AffectedTargets = append(vmStatus.AffectedTargets, node.Name+":ns:"+vmi)
 							}
+							if vmSpec.SuspendEmailAlert != nil && !*vmSpec.SuspendEmailAlert {
+								vmUtil.SendEmailAlert(ns, node.Name, fmt.Sprintf("/home/golanguser/%s-%s.txt", ns, node.Name), vmSpec, node.Name)
+							}
+							if vmSpec.NotifyExtenal != nil && *vmSpec.NotifyExtenal && !vmStatus.ExternalNotified {
+								err := vmUtil.SubNotifyExternalSystem(data, "firing", ns, node.Name, vmSpec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-ext.txt", ns, node.Name), vmStatus)
+								if err != nil {
+									log.Log.Error(err, "Failed to notify the external system")
+								}
+								fingerprint, err := vmUtil.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-ext.txt", ns, node.Name))
+								if err != nil {
+									log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
+								}
+								incident, err := vmUtil.SetIncidentID(vmSpec, vmStatus, string(username), string(password), fingerprint)
+								if err != nil || incident == "" {
+									log.Log.Info("Failed to update the incident ID, either incident is getting created or other issues.")
+								}
+								if !slices.Contains(vmStatus.IncidentID, incident) && incident != "" && incident != "[Pending]" {
+									vmStatus.IncidentID = append(vmStatus.IncidentID, incident)
+								}
+								now := metav1.Now()
+								vmStatus.ExternalNotifiedTime = &now
+								vmStatus.ExternalNotified = true
+							}
 						}
-						if vmSpec.SuspendEmailAlert != nil && !*vmSpec.SuspendEmailAlert {
-							vmUtil.SendEmailAlert(ns, node.Name, fmt.Sprintf("/home/golanguser/%s-%s.txt", ns, node.Name), vmSpec, node.Name)
-						}
-						if vmSpec.NotifyExtenal != nil && *vmSpec.NotifyExtenal && !vmStatus.ExternalNotified {
-							err := vmUtil.SubNotifyExternalSystem(data, "firing", ns, node.Name, vmSpec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/%s-%s-ext.txt", ns, node.Name), vmStatus)
-							if err != nil {
-								log.Log.Error(err, "Failed to notify the external system")
-							}
-							fingerprint, err := vmUtil.ReadFile(fmt.Sprintf("/home/golanguser/%s-%s-ext.txt", ns, node.Name))
-							if err != nil {
-								log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
-							}
-							incident, err := vmUtil.SetIncidentID(vmSpec, vmStatus, string(username), string(password), fingerprint)
-							if err != nil || incident == "" {
-								log.Log.Info("Failed to update the incident ID, either incident is getting created or other issues.")
-							}
-							if !slices.Contains(vmStatus.IncidentID, incident) && incident != "" && incident != "[Pending]" {
-								vmStatus.IncidentID = append(vmStatus.IncidentID, incident)
-							}
-							now := metav1.Now()
-							vmStatus.ExternalNotifiedTime = &now
-							vmStatus.ExternalNotified = true
-						}
+
 					} else {
 						isAffected = false
 						vmStatus.AffectedTargets = nil
