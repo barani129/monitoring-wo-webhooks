@@ -202,7 +202,7 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 				if !slices.Contains(clusterStatus.AffectedTargets, target) {
 					clusterStatus.AffectedTargets = append(clusterStatus.AffectedTargets, target)
 					if clusterSpec.SuspendEmailAlert != nil && !*clusterSpec.SuspendEmailAlert {
-						clusterUtil.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ip[0], ip[1]), clusterSpec, fmt.Sprintf("Target %s is not reahcable on port %s from k8s cluster %s", ip[0], ip[1], runningHost))
+						clusterUtil.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ip[0], ip[1]), clusterSpec, fmt.Sprintf("Target %s is not reachable on port %s from k8s cluster %s", ip[0], ip[1], runningHost))
 					}
 					if clusterSpec.NotifyExtenal != nil && *clusterSpec.NotifyExtenal {
 						err := clusterUtil.NotifyExternalSystem(data, "firing", target, clusterSpec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-ext.txt", ip[0], ip[1]), clusterStatus)
@@ -231,35 +231,35 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 					// no action
 				} else {
 					if slices.Contains(clusterStatus.AffectedTargets, target) {
+						if clusterSpec.SuspendEmailAlert != nil && !*clusterSpec.SuspendEmailAlert {
+							clusterUtil.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ip[0], ip[1]), clusterSpec, fmt.Sprintf("Target %s is now reachable again on port %s from k8s cluster %s", ip[0], ip[1], runningHost))
+						}
+						if clusterSpec.NotifyExtenal != nil && *clusterSpec.NotifyExtenal && clusterStatus.ExternalNotified {
+							fingerprint, err := clusterUtil.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-ext.txt", ip[0], ip[1]))
+							if err != nil {
+								log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
+							}
+							incident, err := clusterUtil.SetIncidentID(clusterSpec, clusterStatus, string(username), string(password), fingerprint)
+							if err != nil || incident == "" {
+								log.Log.Info("Failed to get the incident ID, either incident is getting created or other issues.")
+							}
+							if slices.Contains(clusterStatus.IncidentID, incident) {
+								idx := slices.Index(clusterStatus.IncidentID, incident)
+								clusterStatus.IncidentID = deleteElementSlice(clusterStatus.IncidentID, idx)
+							}
+
+							err = clusterUtil.SubNotifyExternalSystem(data, "resolved", target, clusterSpec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", ip[0], ip[1]), clusterStatus)
+							if err != nil {
+								log.Log.Error(err, "Failed to notify the external system")
+							}
+							now := metav1.Now()
+							clusterStatus.ExternalNotifiedTime = &now
+						}
 						idx := slices.Index(clusterStatus.AffectedTargets, target)
 						clusterStatus.AffectedTargets = deleteElementSlice(clusterStatus.AffectedTargets, idx)
+						os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ip[0], ip[1]))
+						os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s-ext.txt", ip[0], ip[1]))
 					}
-					if clusterSpec.SuspendEmailAlert != nil && !*clusterSpec.SuspendEmailAlert {
-						clusterUtil.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ip[0], ip[1]), clusterSpec, fmt.Sprintf("Target %s is now reahcable again on port %s from k8s cluster %s", ip[0], ip[1], runningHost))
-					}
-					if clusterSpec.NotifyExtenal != nil && *clusterSpec.NotifyExtenal && clusterStatus.ExternalNotified {
-						fingerprint, err := clusterUtil.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-ext.txt", ip[0], ip[1]))
-						if err != nil {
-							log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
-						}
-						incident, err := clusterUtil.SetIncidentID(clusterSpec, clusterStatus, string(username), string(password), fingerprint)
-						if err != nil || incident == "" {
-							log.Log.Info("Failed to get the incident ID, either incident is getting created or other issues.")
-						}
-						if slices.Contains(clusterStatus.IncidentID, incident) {
-							idx := slices.Index(clusterStatus.IncidentID, incident)
-							clusterStatus.IncidentID = deleteElementSlice(clusterStatus.IncidentID, idx)
-						}
-
-						err = clusterUtil.SubNotifyExternalSystem(data, "resolved", target, clusterSpec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", ip[0], ip[1]), clusterStatus)
-						if err != nil {
-							log.Log.Error(err, "Failed to notify the external system")
-						}
-						now := metav1.Now()
-						clusterStatus.ExternalNotifiedTime = &now
-					}
-					os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ip[0], ip[1]))
-					os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s-ext.txt", ip[0], ip[1]))
 				}
 			}
 		}
@@ -290,36 +290,37 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 						}
 					} else {
 						if slices.Contains(clusterStatus.AffectedTargets, target) {
+							if clusterSpec.SuspendEmailAlert != nil && !*clusterSpec.SuspendEmailAlert {
+								clusterUtil.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ip[0], ip[1]), clusterSpec, fmt.Sprintf("Target %s is now reachable again on port %s from k8s cluster %s", ip[0], ip[1], runningHost))
+							}
+							if clusterSpec.NotifyExtenal != nil && *clusterSpec.NotifyExtenal && clusterStatus.ExternalNotified {
+								fingerprint, err := clusterUtil.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-ext.txt", ip[0], ip[1]))
+								if err != nil {
+									log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
+								}
+								incident, err := clusterUtil.SetIncidentID(clusterSpec, clusterStatus, string(username), string(password), fingerprint)
+								if err != nil || incident == "" {
+									log.Log.Info("Failed to get the incident ID, either incident is getting created or other issues.")
+								}
+								if slices.Contains(clusterStatus.IncidentID, incident) {
+									idx := slices.Index(clusterStatus.IncidentID, incident)
+									clusterStatus.IncidentID = deleteElementSlice(clusterStatus.IncidentID, idx)
+								}
+
+								err = clusterUtil.SubNotifyExternalSystem(data, "resolved", target, clusterSpec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", ip[0], ip[1]), clusterStatus)
+								if err != nil {
+									log.Log.Error(err, "Failed to notify the external system")
+								}
+								now := metav1.Now()
+								clusterStatus.ExternalNotifiedTime = &now
+
+							}
 							idx := slices.Index(clusterStatus.AffectedTargets, target)
 							clusterStatus.AffectedTargets = deleteElementSlice(clusterStatus.AffectedTargets, idx)
+							os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ip[0], ip[1]))
+							os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s-ext.txt", ip[0], ip[1]))
 						}
-						if clusterSpec.SuspendEmailAlert != nil && !*clusterSpec.SuspendEmailAlert {
-							clusterUtil.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ip[0], ip[1]), clusterSpec, fmt.Sprintf("Target %s is now reahcable again on port %s from k8s cluster %s", ip[0], ip[1], runningHost))
-						}
-						if clusterSpec.NotifyExtenal != nil && *clusterSpec.NotifyExtenal && clusterStatus.ExternalNotified {
-							fingerprint, err := clusterUtil.ReadFile(fmt.Sprintf("/home/golanguser/.%s-%s-ext.txt", ip[0], ip[1]))
-							if err != nil {
-								log.Log.Info("Failed to update the incident ID. Couldn't find the fingerprint in the file")
-							}
-							incident, err := clusterUtil.SetIncidentID(clusterSpec, clusterStatus, string(username), string(password), fingerprint)
-							if err != nil || incident == "" {
-								log.Log.Info("Failed to get the incident ID, either incident is getting created or other issues.")
-							}
-							if slices.Contains(clusterStatus.IncidentID, incident) {
-								idx := slices.Index(clusterStatus.IncidentID, incident)
-								clusterStatus.IncidentID = deleteElementSlice(clusterStatus.IncidentID, idx)
-							}
 
-							err = clusterUtil.SubNotifyExternalSystem(data, "resolved", target, clusterSpec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s.txt", ip[0], ip[1]), clusterStatus)
-							if err != nil {
-								log.Log.Error(err, "Failed to notify the external system")
-							}
-							now := metav1.Now()
-							clusterStatus.ExternalNotifiedTime = &now
-
-						}
-						os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ip[0], ip[1]))
-						os.Remove(fmt.Sprintf("/home/golanguser/.%s-%s-ext.txt", ip[0], ip[1]))
 					}
 				} else {
 					errorp = append(errorp, ip[0])
@@ -327,7 +328,7 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 					if !slices.Contains(clusterStatus.AffectedTargets, target) {
 						clusterStatus.AffectedTargets = append(clusterStatus.AffectedTargets, target)
 						if clusterSpec.SuspendEmailAlert != nil && !*clusterSpec.SuspendEmailAlert {
-							clusterUtil.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ip[0], ip[1]), clusterSpec, fmt.Sprintf("Target %s is not reahcable on port %s from k8s cluster %s", ip[0], ip[1], runningHost))
+							clusterUtil.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s.txt", ip[0], ip[1]), clusterSpec, fmt.Sprintf("Target %s is not reachable on port %s from k8s cluster %s", ip[0], ip[1], runningHost))
 						}
 						if clusterSpec.NotifyExtenal != nil && *clusterSpec.NotifyExtenal {
 							err := clusterUtil.SubNotifyExternalSystem(data, "firing", target, clusterSpec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-ext.txt", ip[0], ip[1]), clusterStatus)
