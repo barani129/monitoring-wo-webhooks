@@ -1866,6 +1866,24 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 					}
 				}
 			}
+			// clean deleted services
+
+			if len(status.FailedChecks) > 0 {
+				for idx, check := range status.FailedChecks {
+					if strings.Contains(check, "doesn't have any target pods") || strings.Contains(check, "is found with no valid IP") || strings.Contains(check, "is not part of any configured IP pools") {
+						svcs := strings.Split(check, " ")
+						if !slices.Contains(lbsvcs, svcs[1]) {
+							status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
+						}
+					} else if strings.Contains(check, "is not configured to be advertised") {
+						svcs := strings.Split(check, " ")
+						svc, _, _ := strings.Cut(svcs[1], `'s`)
+						if !slices.Contains(lbsvcs, svc) {
+							status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
+						}
+					}
+				}
+			}
 			now := v1.Now()
 			status.LastRunTime = &now
 			if len(status.FailedChecks) < 1 {
