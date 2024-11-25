@@ -1875,31 +1875,42 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				}
 			}
 			// clean deleted services
-
-			if len(status.FailedChecks) > 0 {
-				for idx, check := range status.FailedChecks {
-					if strings.Contains(check, "doesn't have any target pods") || strings.Contains(check, "is found with no valid IP") || strings.Contains(check, "is not part of any configured IP pools") {
-						svcs := strings.Split(check, " ")
-						if !slices.Contains(lbsvcs, svcs[1]) {
-							if len(status.FailedChecks) == 1 {
-								status.FailedChecks = nil
-							} else {
-								status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
+			lbsvcs, _, err = util.GetLoadBalancerSevices(*clientset)
+			if err != nil {
+				log.Log.Info("unable to retrieve loadbalancer services.")
+			}
+			var newLbSvc []string
+			for _, lbsvc := range lbsvcs {
+				svcs := strings.Split(lbsvc, ":")
+				newLbSvc = append(newLbSvc, svcs[0])
+			}
+			if len(newLbSvc) > 0 {
+				if len(status.FailedChecks) > 0 {
+					for idx, check := range status.FailedChecks {
+						if strings.Contains(check, "doesn't have any target pods") || strings.Contains(check, "is found with no valid IP") || strings.Contains(check, "is not part of any configured IP pools") {
+							svcs := strings.Split(check, " ")
+							if !slices.Contains(newLbSvc, svcs[1]) {
+								if len(status.FailedChecks) == 1 {
+									status.FailedChecks = nil
+								} else {
+									status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
+								}
 							}
-						}
-					} else if strings.Contains(check, "is not configured to be advertised") {
-						svcs := strings.Split(check, " ")
-						svc, _, _ := strings.Cut(svcs[1], `'s`)
-						if !slices.Contains(lbsvcs, svc) {
-							if len(status.FailedChecks) == 1 {
-								status.FailedChecks = nil
-							} else {
-								status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
+						} else if strings.Contains(check, "is not configured to be advertised") {
+							svcs := strings.Split(check, " ")
+							svc, _, _ := strings.Cut(svcs[1], `'s`)
+							if !slices.Contains(newLbSvc, svc) {
+								if len(status.FailedChecks) == 1 {
+									status.FailedChecks = nil
+								} else {
+									status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
+								}
 							}
 						}
 					}
 				}
 			}
+
 			now := v1.Now()
 			status.LastRunTime = &now
 			if len(status.FailedChecks) < 1 {
