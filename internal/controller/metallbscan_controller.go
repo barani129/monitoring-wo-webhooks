@@ -1873,13 +1873,21 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 					if strings.Contains(check, "doesn't have any target pods") || strings.Contains(check, "is found with no valid IP") || strings.Contains(check, "is not part of any configured IP pools") {
 						svcs := strings.Split(check, " ")
 						if !slices.Contains(lbsvcs, svcs[1]) {
-							status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
+							if len(status.FailedChecks) == 1 {
+								status.FailedChecks = nil
+							} else {
+								status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
+							}
 						}
 					} else if strings.Contains(check, "is not configured to be advertised") {
 						svcs := strings.Split(check, " ")
 						svc, _, _ := strings.Cut(svcs[1], `'s`)
 						if !slices.Contains(lbsvcs, svc) {
-							status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
+							if len(status.FailedChecks) == 1 {
+								status.FailedChecks = nil
+							} else {
+								status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
+							}
 						}
 					}
 				}
