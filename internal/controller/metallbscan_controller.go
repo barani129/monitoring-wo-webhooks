@@ -1852,7 +1852,11 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				if slices.Contains(status.FailedChecks, "is not advertised by speaker pod") {
 					for idx, val := range status.FailedChecks {
 						if strings.Contains(val, "is not advertised by speaker pod") {
-							status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
+							if len(status.FailedChecks) == 1 {
+								status.FailedChecks = nil
+							} else {
+								status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
+							}
 						}
 					}
 				}
@@ -1861,7 +1865,11 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				if slices.Contains(status.FailedChecks, "doesn't have the best route advertised by speaker pod") {
 					for idx, val := range status.FailedChecks {
 						if strings.Contains(val, "doesn't have the best route advertised by speaker pod") {
-							status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
+							if len(status.FailedChecks) == 1 {
+								status.FailedChecks = nil
+							} else {
+								status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
+							}
 						}
 					}
 				}
