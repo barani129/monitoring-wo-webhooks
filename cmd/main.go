@@ -39,6 +39,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	monitoringv1 "github.com/barani129/monitoring-wo-webhooks/api/v1"
 	monitoringv1alpha1 "github.com/barani129/monitoring-wo-webhooks/api/v1alpha1"
 	"github.com/barani129/monitoring-wo-webhooks/internal/controller"
 	//+kubebuilder:scaffold:imports
@@ -55,6 +56,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(monitoringv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(monitoringv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -215,6 +217,18 @@ func main() {
 		ClusterResourceNamespace: clusterResourceNamespace,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "MetallbScan")
+		os.Exit(1)
+	}
+	if err = (&controller.OcpHealthCheckReconciler{
+		Client:                   mgr.GetClient(),
+		Kind:                     "OcpHealthCheck",
+		Scheme:                   mgr.GetScheme(),
+		RESTClient:               restClient,
+		RESTConfig:               mgr.GetConfig(),
+		ClusterResourceNamespace: clusterResourceNamespace,
+		InformerCount:            int64(1),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "OcpHealthCheck")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

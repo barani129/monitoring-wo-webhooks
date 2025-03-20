@@ -299,7 +299,7 @@ func SubNotifyExternalSystem(data map[string]string, status string, url string, 
 func NotifyExternalSystem(data map[string]string, status string, url string, username string, password string, filename string, alertName string) error {
 	fig, _ := ReadFile(filename)
 	if fig != "" {
-		log.Println("External system has already been notified for target %s . Exiting")
+		log.Println("External system has already been notified for targetExiting")
 		return nil
 	}
 	fingerprint := randomString(10)
