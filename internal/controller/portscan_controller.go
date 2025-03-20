@@ -227,7 +227,7 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 				}
 
 			} else {
-				if _, err := os.Stat(fmt.Sprintf("/home/golanguser/.%s-%s-ext.txt", ip[0], ip[1])); os.IsNotExist(err) {
+				if _, err := os.Stat(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ip[0], ip[1])); os.IsNotExist(err) {
 					// no action
 				} else {
 					if slices.Contains(clusterStatus.AffectedTargets, target) {
@@ -283,7 +283,7 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 				ip := strings.SplitN(target, ":", 2)
 				err := clusterUtil.CheckServerAliveness(target, clusterStatus)
 				if err == nil {
-					if _, err := os.Stat(fmt.Sprintf("/home/golanguser/.%s-%s-ext.txt", ip[0], ip[1])); os.IsNotExist(err) {
+					if _, err := os.Stat(fmt.Sprintf("/home/golanguser/.%s-%s.txt", ip[0], ip[1])); os.IsNotExist(err) {
 						if slices.Contains(clusterStatus.AffectedTargets, target) {
 							idx := slices.Index(clusterStatus.AffectedTargets, target)
 							clusterStatus.AffectedTargets = deleteElementSlice(clusterStatus.AffectedTargets, idx)
