@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/barani129/monitoring-wo-webhooks/api/v1alpha1"
-	mcfgv1 "github.com/openshift/api/machineconfiguration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/apimachinery/pkg/labels"
@@ -559,47 +558,4 @@ func SendEmailRecoveredAlert(nodeName string, filename string, spec *v1alpha1.Me
 			}
 		}
 	}
-}
-
-func CheckMCPINProgress(clientset *kubernetes.Clientset) (bool, error) {
-	mcpList := mcfgv1.MachineConfigPoolList{}
-	err := clientset.RESTClient().Get().AbsPath("/apis/machineconfiguration.openshift.io/v1/machineconfigpools").Do(context.Background()).Into(&mcpList)
-	if err != nil {
-		return false, err
-	}
-	for _, mcp := range mcpList.Items {
-		for _, cond := range mcp.Status.Conditions {
-			if cond.Type == "Updating" {
-				if cond.Status == "True" {
-					if mcpInProgress, _, err := CheckNodeMcpAnnotations(clientset, mcp.Spec.NodeSelector.MatchLabels); err != nil {
-						return false, err
-					} else if err == nil && mcpInProgress {
-						return true, nil
-					}
-					// ignored else condition as mcp update true condition could have caused by manual update
-				}
-			}
-		}
-	}
-	return false, nil
-}
-
-func CheckNodeMcpAnnotations(clientset *kubernetes.Clientset, nodeLabel map[string]string) (bool, string, error) {
-	nodeList, err := clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{
-		LabelSelector: labels.Set(nodeLabel).String(),
-	})
-	if err != nil {
-		return false, "", err
-	}
-	for _, node := range nodeList.Items {
-		for anno, val := range node.Annotations {
-			// to be updated
-			if anno == "machineconfiguration.openshift.io/state" {
-				if val != "Done" {
-					return true, node.Name, nil
-				}
-			}
-		}
-	}
-	return false, "", nil
 }
