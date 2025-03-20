@@ -47,7 +47,7 @@ RUN chmod 777 /home/golanguser
 WORKDIR /home/golanguser
 COPY --from=builder /home/golanguser/manager .
 RUN mkdir -p /home/golanguser/files/container/ /home/golanguser/files/port/ /home/golanguser/files/vmscan/ /home/golanguser/files/metallb/ /home/golanguser/files/ocphealthcheck/
-RUN chown -R golanguser:golanguser /home/golanguser/files/container/ /home/golanguser/files/port/ /home/golanguser/files/vmscan/ /home/golanguser/files/metallb/ /home/golanguser/files/ocphealthcheck/
+RUN chown -R golanguser:golanguser /home/golanguser/files/
 USER 65532:65532
 
 
