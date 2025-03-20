@@ -19,7 +19,10 @@ rules:
   verbs:
   - create
   - get
+  - list
   - patch
+  - update
+  - watch
 - apiGroups:
   - ""
   resources:
@@ -44,6 +47,8 @@ rules:
   - create
   - get
   - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - ""
@@ -124,6 +129,30 @@ rules:
   - list
   - watch
 - apiGroups:
+  - argoproj.io
+  resources:
+  - argocds
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclusters
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - clusteroperators
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - machineconfiguration.openshift.io
   resources:
   - machineconfigpools
@@ -169,6 +198,32 @@ rules:
   - monitoring.spark.co.nz
   resources:
   - metallbscans/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - monitoring.spark.co.nz
+  resources:
+  - ocphealthchecks
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - monitoring.spark.co.nz
+  resources:
+  - ocphealthchecks/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - monitoring.spark.co.nz
+  resources:
+  - ocphealthchecks/status
   verbs:
   - get
   - patch
@@ -227,6 +282,38 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - nmstate.io
+  resources:
+  - nodenetworkconfigurationpolicies
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - catalogsources
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - clusterserviceversions
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - policy.open-cluster-management.io
+  resources:
+  - policies
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - tuned.openshift.io
   resources:

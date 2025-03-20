@@ -47,6 +47,7 @@ import (
 
 	monitoringv1alpha1 "github.com/barani129/monitoring-wo-webhooks/api/v1alpha1"
 	"github.com/barani129/monitoring-wo-webhooks/internal/metallbscan/util"
+	ocphealthcheckutil "github.com/barani129/monitoring-wo-webhooks/internal/ocphealthcheck/util"
 	tunedv1 "github.com/openshift/cluster-node-tuning-operator/pkg/apis/tuned/v1"
 )
 
@@ -487,7 +488,8 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		// }
 		log.Log.Info(fmt.Sprintf("Staring metallbscan healthchecks in target cluster %s", runningHost))
 		log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
-		mcpRunning, mcpName, err := isMcpUpdating(*clientset)
+		mcpRunning, err := ocphealthcheckutil.CheckMCPINProgress(clientset)
+		// mcpRunning, mcpName, err := isMcpUpdating(*clientset)
 		if err != nil && k8serrors.IsNotFound(err) {
 			log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
 		} else if err != nil {
@@ -497,7 +499,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			log.Log.Info("machineconfigpool update is in progress, exiting")
 			if !slices.Contains(status.FailedChecks, "MachineConfigPool update is in progress") {
 				if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-					util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool %s update is in progress in cluster %s", mcpName, runningHost))
+					util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool update is in progress in cluster %s", runningHost))
 				}
 				status.FailedChecks = append(status.FailedChecks, "MachineConfigPool update is in progress")
 			}
@@ -654,7 +656,8 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 
 		log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
-		mcpRunning, mcpName, err = isMcpUpdating(*clientset)
+		mcpRunning, err = ocphealthcheckutil.CheckMCPINProgress(clientset)
+		// mcpRunning, mcpName, err = isMcpUpdating(*clientset)
 		if err != nil && k8serrors.IsNotFound(err) {
 			log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
 		} else if err != nil {
@@ -663,9 +666,9 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		if mcpRunning {
 			log.Log.Info("machineconfigpool update is in progress, exiting")
 			if !slices.Contains(status.FailedChecks, "MachineConfigPool update is in progress") {
-				if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-					util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool %s update is in progress in cluster %s", mcpName, runningHost))
-				}
+				// if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+				// 	util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool update is in progress in cluster %s", runningHost))
+				// }
 				status.FailedChecks = append(status.FailedChecks, "MachineConfigPool update is in progress")
 			}
 			return ctrl.Result{RequeueAfter: defaultHealthCheckIntervalMetal}, nil
@@ -703,11 +706,11 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 						if svc.name == lbs {
 							if !slices.Contains(status.FailedChecks, fmt.Sprintf("One of the target pods of Service %s in namespace %s is not running", svc.name, svc.namespace)) {
 								if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "nonrunningendpoint"), spec, fmt.Sprintf("One of the target pods of Service %s in namespace %s is not running in cluster", svc.name, svc.namespace, runningHost))
+									util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "nonrunningendpoint"), spec, fmt.Sprintf("One of the target pods of Service %s in namespace %s is not running in cluster %s", svc.name, svc.namespace, runningHost))
 								}
 								status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("One of the target pods of Service %s in namespace %s is not running", svc.name, svc.namespace))
 								if spec.NotifyExternal != nil && *spec.NotifyExternal {
-									err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "alertnonrunningendpoint"), fmt.Sprintf("One of the target pods of Service %s in namespace %s is not running in cluster", svc.name, svc.namespace, runningHost))
+									err := util.NotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "alertnonrunningendpoint"), fmt.Sprintf("One of the target pods of Service %s in namespace %s is not running in cluster %s", svc.name, svc.namespace, runningHost))
 									if err != nil {
 										log.Log.Error(err, "Failed to notify the external system")
 									}
@@ -761,8 +764,8 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				}
 			}
 		}
-
-		mcpRunning, mcpName, err = isMcpUpdating(*clientset)
+		mcpRunning, err = ocphealthcheckutil.CheckMCPINProgress(clientset)
+		// mcpRunning, mcpName, err = isMcpUpdating(*clientset)
 		if err != nil && k8serrors.IsNotFound(err) {
 			log.Log.Info("machineconfigpools.openshift.io/v1 is not configured in this cluster")
 		} else if err != nil {
@@ -771,9 +774,9 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		if mcpRunning {
 			log.Log.Info("machineconfigpool update is in progress, exiting")
 			if !slices.Contains(status.FailedChecks, "MachineConfigPool update is in progress") {
-				if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-					util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool %s update is in progress in cluster %s", mcpName, runningHost))
-				}
+				// if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+				// 	util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool %s update is in progress in cluster %s", mcpName, runningHost))
+				// }
 				status.FailedChecks = append(status.FailedChecks, "MachineConfigPool update is in progress")
 			}
 			return ctrl.Result{RequeueAfter: defaultHealthCheckIntervalMetal}, nil
@@ -875,7 +878,8 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 
 		log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
-		mcpRunning, mcpName, err = isMcpUpdating(*clientset)
+		mcpRunning, err = ocphealthcheckutil.CheckMCPINProgress(clientset)
+		// mcpRunning, mcpName, err = isMcpUpdating(*clientset)
 		if err != nil && k8serrors.IsNotFound(err) {
 			log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
 		} else if err != nil {
@@ -884,9 +888,9 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		if mcpRunning {
 			log.Log.Info("machineconfigpool update is in progress, exiting")
 			if !slices.Contains(status.FailedChecks, "MachineConfigPool update is in progress") {
-				if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-					util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool %s update is in progress in cluster %s", mcpName, runningHost))
-				}
+				// if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+				// 	util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool %s update is in progress in cluster %s", mcpName, runningHost))
+				// }
 				status.FailedChecks = append(status.FailedChecks, "MachineConfigPool update is in progress")
 			}
 			return ctrl.Result{RequeueAfter: defaultHealthCheckIntervalMetal}, nil
@@ -1010,7 +1014,8 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			// }
 			log.Log.Info("Staring metallbscan healthchecks as configured time interval has elasped")
 			log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
-			mcpRunning, mcpName, err := isMcpUpdating(*clientset)
+			mcpRunning, err := ocphealthcheckutil.CheckMCPINProgress(clientset)
+			// mcpRunning, mcpName, err := isMcpUpdating(*clientset)
 			if err != nil && k8serrors.IsNotFound(err) {
 				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
 			} else if err != nil {
@@ -1019,20 +1024,20 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			if mcpRunning {
 				log.Log.Info("machineconfigpool update is in progress, exiting")
 				if !slices.Contains(status.FailedChecks, "MachineConfigPool update is in progress") {
-					if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-						util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool %s update is in progress in cluster %s", mcpName, runningHost))
-					}
+					// if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+					// 	util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool %s update is in progress in cluster %s", mcpName, runningHost))
+					// }
 					status.FailedChecks = append(status.FailedChecks, "MachineConfigPool update is in progress")
 				}
 				return ctrl.Result{RequeueAfter: defaultHealthCheckIntervalMetal}, nil
 			} else {
 				if slices.Contains(status.FailedChecks, "MachineConfigPool update is in progress") {
-					if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-						util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool update is not in progress in cluster %s", runningHost))
-					}
+					// if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+					// 	util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool update is not in progress in cluster %s", runningHost))
+					// }
 					idx := slices.Index(status.FailedChecks, "MachineConfigPool update is in progress")
 					status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
-					os.Remove(fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"))
+					// os.Remove(fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"))
 				}
 				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 update is not in progress, proceeding further.")
 			}
@@ -1301,7 +1306,8 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 
 			log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
-			mcpRunning, mcpName, err = isMcpUpdating(*clientset)
+			mcpRunning, err = ocphealthcheckutil.CheckMCPINProgress(clientset)
+			// mcpRunning, mcpName, err = isMcpUpdating(*clientset)
 			if err != nil && k8serrors.IsNotFound(err) {
 				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
 			} else if err != nil {
@@ -1310,20 +1316,20 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			if mcpRunning {
 				log.Log.Info("machineconfigpool update is in progress, exiting")
 				if !slices.Contains(status.FailedChecks, "MachineConfigPool update is in progress") {
-					if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-						util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool %s update is in progress in cluster %s", mcpName, runningHost))
-					}
+					// if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+					// 	util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool %s update is in progress in cluster %s", mcpName, runningHost))
+					// }
 					status.FailedChecks = append(status.FailedChecks, "MachineConfigPool update is in progress")
 				}
 				return ctrl.Result{RequeueAfter: defaultHealthCheckIntervalMetal}, nil
 			} else {
 				if slices.Contains(status.FailedChecks, "MachineConfigPool update is in progress") {
-					if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-						util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool update is not in progress in cluster %s", runningHost))
-					}
+					// if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+					// 	util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool update is not in progress in cluster %s", runningHost))
+					// }
 					idx := slices.Index(status.FailedChecks, "MachineConfigPool update is in progress")
 					status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
-					os.Remove(fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"))
+					// os.Remove(fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"))
 				}
 				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 update is not in progress, proceeding further.")
 			}
@@ -1362,7 +1368,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 									}
 									status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("One of the target pods of Service %s in namespace %s is not running", svc.name, svc.namespace))
 									if spec.NotifyExternal != nil && *spec.NotifyExternal {
-										err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "alertnonrunningendpoint"), fmt.Sprintf("One of the target pods of Service %s in namespace %s is not running in cluster", svc.name, svc.namespace, runningHost))
+										err := util.SubNotifyExternalSystem(data, "firing", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "alertnonrunningendpoint"), fmt.Sprintf("One of the target pods of Service %s in namespace %s is not running in cluster %s", svc.name, svc.namespace, runningHost))
 										if err != nil {
 											log.Log.Error(err, "Failed to notify the external system")
 										}
@@ -1409,7 +1415,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 									idx := slices.Index(status.IncidentID, incident)
 									status.IncidentID = deleteMetalElementSlice(status.IncidentID, idx)
 								}
-								err = util.NotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "alertnonrunningendpoint"), fmt.Sprintf("One of the target pods of Service %s in namespace %s is not running in cluster", svc.name, svc.namespace, runningHost))
+								err = util.NotifyExternalSystem(data, "resolved", spec.ExternalURL, string(username), string(password), fmt.Sprintf("/home/golanguser/.%s-%s-%s.txt", svc.name, svc.namespace, "alertnonrunningendpoint"), fmt.Sprintf("One of the target pods of Service %s in namespace %s is not running in cluster %s", svc.name, svc.namespace, runningHost))
 								if err != nil {
 									log.Log.Error(err, "Failed to notify the external system")
 								}
@@ -1489,7 +1495,8 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 
 			log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
-			mcpRunning, mcpName, err = isMcpUpdating(*clientset)
+			mcpRunning, err = ocphealthcheckutil.CheckMCPINProgress(clientset)
+			// mcpRunning, mcpName, err = isMcpUpdating(*clientset)
 			if err != nil && k8serrors.IsNotFound(err) {
 				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
 			} else if err != nil {
@@ -1498,20 +1505,20 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			if mcpRunning {
 				log.Log.Info("machineconfigpool update is in progress, exiting")
 				if !slices.Contains(status.FailedChecks, "MachineConfigPool update is in progress") {
-					if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-						util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool %s update is in progress in cluster %s", mcpName, runningHost))
-					}
+					// if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+					// 	util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool %s update is in progress in cluster %s", mcpName, runningHost))
+					// }
 					status.FailedChecks = append(status.FailedChecks, "MachineConfigPool update is in progress")
 				}
 				return ctrl.Result{RequeueAfter: defaultHealthCheckIntervalMetal}, nil
 			} else {
 				if slices.Contains(status.FailedChecks, "MachineConfigPool update is in progress") {
-					if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-						util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool update is not in progress in cluster %s", runningHost))
-					}
+					// if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+					// 	util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool update is not in progress in cluster %s", runningHost))
+					// }
 					idx := slices.Index(status.FailedChecks, "MachineConfigPool update is in progress")
 					status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
-					os.Remove(fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"))
+					// os.Remove(fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"))
 				}
 				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 update is not in progress, proceeding further.")
 			}
@@ -1696,7 +1703,8 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			log.Log.Info("Running BGP neighbour cleanup")
 			CheckIfBGPHopExists(r, *clientset, metallbNamespace, nodeSelector, speakerSelector, spec, status, runningHost)
 			log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
-			mcpRunning, mcpName, err = isMcpUpdating(*clientset)
+			mcpRunning, err = ocphealthcheckutil.CheckMCPINProgress(clientset)
+			// mcpRunning, mcpName, err = isMcpUpdating(*clientset)
 			if err != nil && k8serrors.IsNotFound(err) {
 				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
 			} else if err != nil {
@@ -1705,20 +1713,20 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			if mcpRunning {
 				log.Log.Info("machineconfigpool update is in progress, exiting")
 				if !slices.Contains(status.FailedChecks, "MachineConfigPool update is in progress") {
-					if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-						util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool %s update is in progress in cluster %s", mcpName, runningHost))
-					}
+					// if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+					// 	util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool %s update is in progress in cluster %s", mcpName, runningHost))
+					// }
 					status.FailedChecks = append(status.FailedChecks, "MachineConfigPool update is in progress")
 				}
 				return ctrl.Result{RequeueAfter: defaultHealthCheckIntervalMetal}, nil
 			} else {
 				if slices.Contains(status.FailedChecks, "MachineConfigPool update is in progress") {
-					if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-						util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool update is not in progress in cluster %s", runningHost))
-					}
+					// if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+					// 	util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool update is not in progress in cluster %s", runningHost))
+					// }
 					idx := slices.Index(status.FailedChecks, "MachineConfigPool update is in progress")
 					status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
-					os.Remove(fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"))
+					// os.Remove(fmt.Sprintf("/home/golanguser/.%s.txt", "mcp"))
 				}
 				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 update is not in progress, proceeding further.")
 			}

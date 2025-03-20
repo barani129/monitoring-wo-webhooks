@@ -26,7 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -43,8 +42,6 @@ func (r *ContainerScan) SetupWebhookWithManager(mgr ctrl.Manager) error {
 // TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
 //+kubebuilder:webhook:path=/mutate-monitoring-spark-co-nz-v1alpha1-containerscan,mutating=true,failurePolicy=fail,sideEffects=None,groups=monitoring.spark.co.nz,resources=containerscans,verbs=create;update,versions=v1alpha1,name=mcontainerscan.kb.io,admissionReviewVersions=v1
-
-var _ webhook.Defaulter = &ContainerScan{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (r *ContainerScan) Default() {
@@ -71,8 +68,6 @@ func (r *ContainerScan) Default() {
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 //+kubebuilder:webhook:path=/validate-monitoring-spark-co-nz-v1alpha1-containerscan,mutating=false,failurePolicy=fail,sideEffects=None,groups=monitoring.spark.co.nz,resources=containerscans,verbs=create;update,versions=v1alpha1,name=vcontainerscan.kb.io,admissionReviewVersions=v1
-
-var _ webhook.Validator = &ContainerScan{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *ContainerScan) ValidateCreate() (admission.Warnings, error) {

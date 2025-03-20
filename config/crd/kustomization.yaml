@@ -6,6 +6,7 @@ resources:
 - bases/monitoring.spark.co.nz_portscans.yaml
 - bases/monitoring.spark.co.nz_vmscans.yaml
 - bases/monitoring.spark.co.nz_metallbscans.yaml
+- bases/monitoring.spark.co.nz_ocphealthchecks.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patches:
