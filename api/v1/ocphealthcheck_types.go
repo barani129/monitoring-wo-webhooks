@@ -53,10 +53,6 @@ type OcpHealthCheckSpec struct {
 	// +optional
 	RelayHost string `json:"relayHost,omitempty"`
 
-	// the frequency of checks to be done, if not set, defaults to 2 minutes
-	// +optional
-	CheckInterval *int64 `json:"checkInterval,omitempty"`
-
 	// Identifies if the openshift cluster is being used as hub for other clusters
 	// Runs extra healthchecks about managed clusters
 	// +optional
