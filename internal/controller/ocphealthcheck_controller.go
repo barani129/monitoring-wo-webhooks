@@ -108,6 +108,17 @@ func (r *OcpHealthCheckReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, err
 	}
 
+	if spec.Suspend != nil && *spec.Suspend {
+		log.Log.Info("OcpHealthCheck is suspended, skipping...")
+		return ctrl.Result{RequeueAfter: time.Minute * 30}, nil
+	}
+
+	if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+		if spec.Email == "" {
+			return ctrl.Result{}, fmt.Errorf("please configure valid email address in spec.Email field")
+		}
+	}
+
 	// switch ocpScan.(type) {
 	// case *ocphealthcheckv1.OcpHealthCheck:
 	// 	// do nothing

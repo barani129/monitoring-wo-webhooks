@@ -120,11 +120,6 @@ func (in *OcpHealthCheckSpec) DeepCopyInto(out *OcpHealthCheckSpec) {
 		*out = new(bool)
 		**out = **in
 	}
-	if in.CheckInterval != nil {
-		in, out := &in.CheckInterval, &out.CheckInterval
-		*out = new(int64)
-		**out = **in
-	}
 	if in.HubCluster != nil {
 		in, out := &in.HubCluster, &out.HubCluster
 		*out = new(bool)
