@@ -152,8 +152,8 @@ github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8m
 github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f h1:y5//uYreIhSUg3J1GEMiLbxo1LJaP8RfCpH6pymGZus=
 github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f/go.mod h1:ZdcZmHo+o7JKHSa8/e818NopupXU1YMK5fe1lsApnBw=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
-github.com/nmstate/kubernetes-nmstate/api v0.0.0-20250318154334-cc19e9f20c96 h1:5DE51f9rxa6fXByNDqj0PX8uXzRvjnEWW1uHeWxF3yg=
-github.com/nmstate/kubernetes-nmstate/api v0.0.0-20250318154334-cc19e9f20c96/go.mod h1:sxSvvtuiwNzOQt2aI994auPWZ9c3QLXVEQgjWbNR0ps=
+github.com/nmstate/kubernetes-nmstate/api v0.0.0-20240422131619-bc2ede247e1a h1:Lm5hXSV5Mqp4spkN2tJsX91JNHoiSJTMKzq5MquwJOA=
+github.com/nmstate/kubernetes-nmstate/api v0.0.0-20240422131619-bc2ede247e1a/go.mod h1:lb+63X+ifPfwEmwPfCVF+EBLYXWEOyx30BmQU7406Qc=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
 github.com/onsi/ginkgo v0.0.0-20170829012221-11459a886d9c/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
