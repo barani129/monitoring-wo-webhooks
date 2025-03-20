@@ -47,7 +47,6 @@ import (
 
 	monitoringv1alpha1 "github.com/barani129/monitoring-wo-webhooks/api/v1alpha1"
 	"github.com/barani129/monitoring-wo-webhooks/internal/metallbscan/util"
-	ocphealthcheckutil "github.com/barani129/monitoring-wo-webhooks/internal/ocphealthcheck/util"
 	tunedv1 "github.com/openshift/cluster-node-tuning-operator/pkg/apis/tuned/v1"
 )
 
@@ -488,7 +487,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		// }
 		log.Log.Info(fmt.Sprintf("Staring metallbscan healthchecks in target cluster %s", runningHost))
 		log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
-		mcpRunning, err := ocphealthcheckutil.CheckMCPINProgress(clientset)
+		mcpRunning, err := util.CheckMCPINProgress(clientset)
 		// mcpRunning, mcpName, err := isMcpUpdating(*clientset)
 		if err != nil && k8serrors.IsNotFound(err) {
 			log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
@@ -656,7 +655,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 
 		log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
-		mcpRunning, err = ocphealthcheckutil.CheckMCPINProgress(clientset)
+		mcpRunning, err = util.CheckMCPINProgress(clientset)
 		// mcpRunning, mcpName, err = isMcpUpdating(*clientset)
 		if err != nil && k8serrors.IsNotFound(err) {
 			log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
@@ -764,7 +763,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				}
 			}
 		}
-		mcpRunning, err = ocphealthcheckutil.CheckMCPINProgress(clientset)
+		mcpRunning, err = util.CheckMCPINProgress(clientset)
 		// mcpRunning, mcpName, err = isMcpUpdating(*clientset)
 		if err != nil && k8serrors.IsNotFound(err) {
 			log.Log.Info("machineconfigpools.openshift.io/v1 is not configured in this cluster")
@@ -878,7 +877,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 
 		log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
-		mcpRunning, err = ocphealthcheckutil.CheckMCPINProgress(clientset)
+		mcpRunning, err = util.CheckMCPINProgress(clientset)
 		// mcpRunning, mcpName, err = isMcpUpdating(*clientset)
 		if err != nil && k8serrors.IsNotFound(err) {
 			log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
@@ -1014,7 +1013,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			// }
 			log.Log.Info("Staring metallbscan healthchecks as configured time interval has elasped")
 			log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
-			mcpRunning, err := ocphealthcheckutil.CheckMCPINProgress(clientset)
+			mcpRunning, err := util.CheckMCPINProgress(clientset)
 			// mcpRunning, mcpName, err := isMcpUpdating(*clientset)
 			if err != nil && k8serrors.IsNotFound(err) {
 				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
@@ -1306,7 +1305,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 
 			log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
-			mcpRunning, err = ocphealthcheckutil.CheckMCPINProgress(clientset)
+			mcpRunning, err = util.CheckMCPINProgress(clientset)
 			// mcpRunning, mcpName, err = isMcpUpdating(*clientset)
 			if err != nil && k8serrors.IsNotFound(err) {
 				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
@@ -1495,7 +1494,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 
 			log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
-			mcpRunning, err = ocphealthcheckutil.CheckMCPINProgress(clientset)
+			mcpRunning, err = util.CheckMCPINProgress(clientset)
 			// mcpRunning, mcpName, err = isMcpUpdating(*clientset)
 			if err != nil && k8serrors.IsNotFound(err) {
 				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
@@ -1703,7 +1702,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			log.Log.Info("Running BGP neighbour cleanup")
 			CheckIfBGPHopExists(r, *clientset, metallbNamespace, nodeSelector, speakerSelector, spec, status, runningHost)
 			log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
-			mcpRunning, err = ocphealthcheckutil.CheckMCPINProgress(clientset)
+			mcpRunning, err = util.CheckMCPINProgress(clientset)
 			// mcpRunning, mcpName, err = isMcpUpdating(*clientset)
 			if err != nil && k8serrors.IsNotFound(err) {
 				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")

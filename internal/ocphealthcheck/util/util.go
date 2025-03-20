@@ -292,7 +292,7 @@ func CheckNodeMcpAnnotations(clientset *kubernetes.Clientset, nodeLabel map[stri
 	for _, node := range nodeList.Items {
 		for anno, val := range node.Annotations {
 			// to be updated
-			if anno == "machineconfiguration.openshift.io/state" {
+			if anno == MACHINECONFIGDONEANNO {
 				if val != MACHINECONFIGUPDATEDONE {
 					return true, node.Name, nil
 				}
