@@ -114,8 +114,8 @@ func (r *OcpHealthCheckReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-		if spec.Email == "" {
-			return ctrl.Result{}, fmt.Errorf("please configure valid email address in spec.Email field")
+		if spec.Email == "" || spec.RelayHost == "" {
+			return ctrl.Result{}, fmt.Errorf("please configure valid email address/relay host in spec")
 		}
 	}
 
