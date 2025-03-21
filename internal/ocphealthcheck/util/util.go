@@ -804,14 +804,17 @@ func OnPodUpdate(newObj interface{}, spec *ocpscanv1.OcpHealthCheckSpec, status 
 		return
 	}
 	if mcp, err := CheckMCPINProgress(clientset); err != nil {
+		log.Log.Info("unable to retrieve MCP progress")
 		return
 	} else if err == nil && mcp {
 		return
 	}
 	// ignoring pod changes during node restart
 	if nodeAffected, err := CheckSingleNodeReadiness(clientset, newPo.Spec.NodeName); err != nil {
+		log.Log.Info("unable to retrieve node information")
 		return
 	} else if nodeAffected {
+		log.Log.Info("Exiting as node is not-ready/unschedulable")
 		return
 	}
 
@@ -819,6 +822,7 @@ func OnPodUpdate(newObj interface{}, spec *ocpscanv1.OcpHealthCheckSpec, status 
 		log.Log.Info("unable to retrieve policy object namespace")
 		return
 	} else if sameNs {
+		log.Log.Info("Exiting as child policy update is in progress")
 		// SendEmail("Pod", fmt.Sprintf("cgu update in progress for namespace %s", newPo.Namespace), "faulty", fmt.Sprintf("possible CGU update is in progress for objects in namespace %s in cluster %s, no pod update alerts will be sent until CGU is compliant, please execute <oc get pods -n %s and oc get policy -A> to validate", newPo.Namespace, runningHost, newPo.Namespace), runningHost, spec)
 		return
 	}
@@ -877,7 +881,7 @@ func OnPodUpdate(newObj interface{}, spec *ocpscanv1.OcpHealthCheckSpec, status 
 						}
 					}
 				}
-			} else if newCont.State.Waiting.Reason == PODERRIMAGEPULL {
+			} else if newCont.State.Waiting.Reason == PODERRIMAGEPULL || newCont.State.Waiting.Reason == "ImagePullBackOff" {
 				SendEmail("Pod", fmt.Sprintf("/home/golanguser/files/ocphealth/.%s-%s.txt", newPo.Name, newPo.Namespace), "faulty", fmt.Sprintf("pod %s's container %s is failing in namespace %s due to ErrImagePull in cluster %s", newPo.Name, newCont.Name, newPo.Namespace, runningHost), runningHost, spec)
 			}
 		} else {
