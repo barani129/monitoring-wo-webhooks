@@ -280,7 +280,7 @@ func CreateDirs() error {
 		dirName := fmt.Sprintf("/home/golanguser/files/%s", path)
 		if _, err := os.ReadDir(dirName); err != nil {
 			if os.IsNotExist(err) {
-				err := os.Mkdir(dirName, 665)
+				err := os.Mkdir(dirName, 0775)
 				if err != nil {
 					return err
 				}
