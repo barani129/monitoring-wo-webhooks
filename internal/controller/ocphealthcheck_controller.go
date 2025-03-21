@@ -276,6 +276,7 @@ func (r *OcpHealthCheckReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			mux.RLock()
 			defer mux.RUnlock()
 			if !synced {
+				log.Log.Info("Waiting for cache sync from mcp")
 				return
 			}
 			util.OnMCPUpdate(newObj, staticClientSet, status, spec, runningHost)
@@ -288,6 +289,7 @@ func (r *OcpHealthCheckReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			mux.RLock()
 			defer mux.RUnlock()
 			if !synced {
+				log.Log.Info("Waiting for cache sync from pod")
 				return
 			}
 			util.OnPodAdd(oldObj)
@@ -296,6 +298,7 @@ func (r *OcpHealthCheckReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			mux.RLock()
 			defer mux.RUnlock()
 			if !synced {
+				log.Log.Info("Waiting for cache sync from pod update")
 				return
 			}
 			util.OnPodUpdate(newObj, spec, status, runningHost, staticClientSet)
@@ -304,6 +307,7 @@ func (r *OcpHealthCheckReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			mux.RLock()
 			defer mux.RUnlock()
 			if !synced {
+				log.Log.Info("Waiting for cache sync from delete")
 				return
 			}
 			util.OnPodDelete(obj, staticClientSet, spec, status, runningHost)
@@ -314,6 +318,7 @@ func (r *OcpHealthCheckReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			mux.RLock()
 			defer mux.RUnlock()
 			if !synced {
+				log.Log.Info("Waiting for cache sync from node")
 				return
 			}
 			util.OnNodeUpdate(newObj, spec, status, runningHost)
@@ -324,6 +329,7 @@ func (r *OcpHealthCheckReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			mux.RLock()
 			defer mux.RUnlock()
 			if !synced {
+				log.Log.Info("Waiting for cache sync from policy")
 				return
 			}
 			util.OnPolicyAdd(obj, spec, status)
@@ -332,6 +338,7 @@ func (r *OcpHealthCheckReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			mux.RLock()
 			defer mux.RUnlock()
 			if !synced {
+				log.Log.Info("Waiting for cache sync from policy update")
 				return
 			}
 			util.OnPolicyUpdate(newObj, staticClientSet, spec, status, runningHost)
@@ -340,6 +347,7 @@ func (r *OcpHealthCheckReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			mux.RLock()
 			defer mux.RUnlock()
 			if !synced {
+				log.Log.Info("Waiting for cache sync from policy delete")
 				return
 			}
 			util.OnPolicyDelete(obj, spec, status, runningHost)
@@ -350,6 +358,7 @@ func (r *OcpHealthCheckReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			mux.RLock()
 			defer mux.RUnlock()
 			if !synced {
+				log.Log.Info("Waiting for cache sync from co")
 				return
 			}
 			util.OnCoUpdate(newObj, staticClientSet, spec, runningHost)
@@ -360,6 +369,7 @@ func (r *OcpHealthCheckReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			mux.RLock()
 			defer mux.RUnlock()
 			if !synced {
+				log.Log.Info("Waiting for cache sync from catalog")
 				return
 			}
 			util.OnCatalogSourceUpdate(newObj, staticClientSet, spec, runningHost)
@@ -370,6 +380,7 @@ func (r *OcpHealthCheckReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			mux.RLock()
 			defer mux.RUnlock()
 			if !synced {
+				log.Log.Info("Waiting for cache sync from nncp")
 				return
 			}
 			util.OnNNCPUpdate(newObj, staticClientSet, spec, runningHost)
@@ -380,6 +391,7 @@ func (r *OcpHealthCheckReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			mux.RLock()
 			defer mux.RUnlock()
 			if !synced {
+				log.Log.Info("Waiting for cache sync from csv")
 				return
 			}
 			util.OnCsvUpdate(newObj, staticClientSet, spec, runningHost)
@@ -390,6 +402,7 @@ func (r *OcpHealthCheckReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			mux.RLock()
 			defer mux.RUnlock()
 			if !synced {
+				log.Log.Info("Waiting for cache sync from tp")
 				return
 			}
 			util.OnTunedProfileUpdate(newObj, spec, runningHost)
@@ -401,6 +414,7 @@ func (r *OcpHealthCheckReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 				mux.RLock()
 				defer mux.RUnlock()
 				if !synced {
+					log.Log.Info("Waiting for cache sync from mc")
 					return
 				}
 				util.OnManagedClusterUpdate(newObj, spec, runningHost)
@@ -411,6 +425,7 @@ func (r *OcpHealthCheckReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 				mux.RLock()
 				defer mux.RUnlock()
 				if !synced {
+					log.Log.Info("Waiting for cache sync from argo")
 					return
 				}
 				util.OnArgoUpdate(newObj, spec, runningHost)
@@ -428,8 +443,10 @@ func (r *OcpHealthCheckReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	log.Log.Info("Waiting for cache sync")
 	var isSynced bool
 	if spec.HubCluster != nil && *spec.HubCluster {
+		log.Log.Info("Waiting for cache sync from hub")
 		isSynced = cache.WaitForCacheSync(ctx.Done(), podInformer.HasSynced, nodeInformer.HasSynced, mcpInformer.HasSynced, policyInformer.HasSynced, coInformer.HasSynced, nncpInformer.HasSynced, catalogInformer.HasSynced, csvInformer.HasSynced, mcInformer.HasSynced, argoInformer.HasSynced, tpInformer.HasSynced)
 	} else {
+		log.Log.Info("Waiting for cache sync from non-hub")
 		isSynced = cache.WaitForCacheSync(ctx.Done(), podInformer.HasSynced, nodeInformer.HasSynced, mcpInformer.HasSynced, policyInformer.HasSynced, coInformer.HasSynced, nncpInformer.HasSynced, catalogInformer.HasSynced, csvInformer.HasSynced, tpInformer.HasSynced)
 	}
 	mux.Lock()
