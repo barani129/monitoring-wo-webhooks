@@ -807,6 +807,7 @@ func OnPodUpdate(newObj interface{}, spec *ocpscanv1.OcpHealthCheckSpec, status 
 		log.Log.Info("unable to retrieve MCP progress")
 		return
 	} else if err == nil && mcp {
+		log.Log.Info("MCP in progress")
 		return
 	}
 	// ignoring pod changes during node restart
