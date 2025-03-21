@@ -44,7 +44,7 @@ const (
 	MCCERT                            = "ClusterCertificateRotated"
 	MCCLOCK                           = "ManagedClusterConditionClockSynced"
 	ARGORUNNING                       = "Running"
-	ARGOAVAILABLE                     = "Availalbe"
+	ARGOAVAILABLE                     = "Available"
 	PODCRASHLOOP                      = "CrashLoopBackOff"
 	PODRUNNING                        = "RUNNING"
 	PODERRIMAGEPULL                   = "ErrImagePull"
@@ -808,7 +808,7 @@ func OnPodUpdate(newObj interface{}, spec *ocpscanv1.OcpHealthCheckSpec, status 
 	} else if err == nil && mcp {
 		return
 	}
-	// ignoring pod changes during pod restart
+	// ignoring pod changes during node restart
 	if nodeAffected, err := CheckSingleNodeReadiness(clientset, newPo.Spec.NodeName); err != nil {
 		return
 	} else if nodeAffected {
