@@ -275,6 +275,7 @@ func getInClusterNamespace() (string, error) {
 }
 
 func CreateDirs() error {
+	fmt.Println("Creating sub directories for log files")
 	for _, path := range []string{"container", "port", "ocphealth", "metallb", "vmscan"} {
 		dirName := fmt.Sprintf("/home/golanguser/files/%s", path)
 		if _, err := os.ReadDir(dirName); err != nil {
