@@ -426,7 +426,7 @@ func (r *OcpHealthCheckReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	// TO DO:
 	// NNCP, CO, Sub, catalogsource
 	log.Log.Info("Waiting for cache sync")
-	var isSynced bool = false
+	var isSynced bool
 	if spec.HubCluster != nil && *spec.HubCluster {
 		isSynced = cache.WaitForCacheSync(ctx.Done(), podInformer.HasSynced, nodeInformer.HasSynced, mcpInformer.HasSynced, policyInformer.HasSynced, coInformer.HasSynced, nncpInformer.HasSynced, catalogInformer.HasSynced, csvInformer.HasSynced, mcInformer.HasSynced, argoInformer.HasSynced, tpInformer.HasSynced)
 	} else {

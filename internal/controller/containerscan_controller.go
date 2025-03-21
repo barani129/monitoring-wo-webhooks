@@ -56,11 +56,6 @@ type ContainerScanReconciler struct {
 	recorder                 record.EventRecorder
 }
 
-// +kubebuilder:rbac:groups=monitoring.spark.co.nz,resources=containerscans,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=monitoring.spark.co.nz,resources=containerscans/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=monitoring.spark.co.nz,resources=containerscans/finalizers,verbs=update
-// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 func (r *ContainerScanReconciler) newContainer() (client.Object, error) {
 	ContainerScanGVK := monitoringv1alpha1.GroupVersion.WithKind(r.Kind)
 	ro, err := r.Scheme.New(ContainerScanGVK)
@@ -69,6 +64,15 @@ func (r *ContainerScanReconciler) newContainer() (client.Object, error) {
 	}
 	return ro.(client.Object), nil
 }
+
+// +kubebuilder:rbac:groups=monitoring.spark.co.nz,resources=containerscans,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=monitoring.spark.co.nz,resources=containerscans/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=monitoring.spark.co.nz,resources=containerscans/finalizers,verbs=update
+// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
+// +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch
+// +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
+// +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
+// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
