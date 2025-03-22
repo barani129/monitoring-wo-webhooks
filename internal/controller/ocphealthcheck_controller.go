@@ -19,7 +19,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	ocphealthcheckv1 "github.com/barani129/monitoring-wo-webhooks/api/v1"
@@ -265,197 +264,83 @@ func (r *OcpHealthCheckReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		argoInformer = nsFactory.ForResource(argoResource).Informer()
 	}
 
-	mux := &sync.RWMutex{}
-	synced := false
+	// mux := &sync.RWMutex{}
+	// synced := false
 	// logic for mcp handling: check if mcp is in progress, if in progress, fetch the node based on labels
 	// mcp.spec.nodeSelector.matchLabels
 	// check if annotation["machineconfiguration.openshift.io/state"] is set to other than Done
 	// if not, assuming that mcp is actually in progress and exiting, otherwise continue with the flow
 	mcpInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			mux.RLock()
-			defer mux.RUnlock()
-			if !synced {
-				log.Log.Info("Waiting for cache sync from mcp")
-				return
-			}
 			util.OnMCPUpdate(newObj, staticClientSet, status, spec, runningHost)
 			util.CleanUpRunningPods(staticClientSet, spec, status, runningHost)
 		},
 	})
 	log.Log.Info("Adding add pod events to pod informer")
 	podInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(oldObj interface{}) {
-			mux.RLock()
-			defer mux.RUnlock()
-			if !synced {
-				log.Log.Info("Waiting for cache sync from pod")
-				return
-			}
-			util.OnPodAdd(oldObj)
-		},
 		UpdateFunc: func(oldObj interface{}, newObj interface{}) {
-			mux.RLock()
-			defer mux.RUnlock()
-			if !synced {
-				log.Log.Info("Waiting for cache sync from pod update")
-				return
-			}
 			util.OnPodUpdate(newObj, spec, status, runningHost, staticClientSet)
 		},
 		DeleteFunc: func(obj interface{}) {
-			mux.RLock()
-			defer mux.RUnlock()
-			if !synced {
-				log.Log.Info("Waiting for cache sync from delete")
-				return
-			}
 			util.OnPodDelete(obj, staticClientSet, spec, status, runningHost)
 		},
 	})
 	nodeInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			mux.RLock()
-			defer mux.RUnlock()
-			if !synced {
-				log.Log.Info("Waiting for cache sync from node")
-				return
-			}
 			util.OnNodeUpdate(newObj, spec, status, runningHost)
 		},
 	})
 	policyInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			mux.RLock()
-			defer mux.RUnlock()
-			if !synced {
-				log.Log.Info("Waiting for cache sync from policy")
-				return
-			}
-			util.OnPolicyAdd(obj, spec, status)
-		},
+		// AddFunc: func(obj interface{}) {
+		// 	util.OnPolicyAdd(obj, spec, status)
+		// },
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			mux.RLock()
-			defer mux.RUnlock()
-			if !synced {
-				log.Log.Info("Waiting for cache sync from policy update")
-				return
-			}
 			util.OnPolicyUpdate(newObj, staticClientSet, spec, status, runningHost)
 		},
 		DeleteFunc: func(obj interface{}) {
-			mux.RLock()
-			defer mux.RUnlock()
-			if !synced {
-				log.Log.Info("Waiting for cache sync from policy delete")
-				return
-			}
 			util.OnPolicyDelete(obj, spec, status, runningHost)
 		},
 	})
 	coInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			mux.RLock()
-			defer mux.RUnlock()
-			if !synced {
-				log.Log.Info("Waiting for cache sync from co")
-				return
-			}
 			util.OnCoUpdate(newObj, staticClientSet, spec, runningHost)
 		},
 	})
 	catalogInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			mux.RLock()
-			defer mux.RUnlock()
-			if !synced {
-				log.Log.Info("Waiting for cache sync from catalog")
-				return
-			}
 			util.OnCatalogSourceUpdate(newObj, staticClientSet, spec, runningHost)
 		},
 	})
 	nncpInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			mux.RLock()
-			defer mux.RUnlock()
-			if !synced {
-				log.Log.Info("Waiting for cache sync from nncp")
-				return
-			}
 			util.OnNNCPUpdate(newObj, staticClientSet, spec, runningHost)
 		},
 	})
 	csvInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			mux.RLock()
-			defer mux.RUnlock()
-			if !synced {
-				log.Log.Info("Waiting for cache sync from csv")
-				return
-			}
 			util.OnCsvUpdate(newObj, staticClientSet, spec, runningHost)
 		},
 	})
 	tpInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			mux.RLock()
-			defer mux.RUnlock()
-			if !synced {
-				log.Log.Info("Waiting for cache sync from tp")
-				return
-			}
 			util.OnTunedProfileUpdate(newObj, spec, runningHost)
 		},
 	})
 	if spec.HubCluster != nil && *spec.HubCluster {
 		mcInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			UpdateFunc: func(oldObj, newObj interface{}) {
-				mux.RLock()
-				defer mux.RUnlock()
-				if !synced {
-					log.Log.Info("Waiting for cache sync from mc")
-					return
-				}
 				util.OnManagedClusterUpdate(newObj, spec, runningHost)
 			},
 		})
 		argoInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			UpdateFunc: func(oldObj, newObj interface{}) {
-				mux.RLock()
-				defer mux.RUnlock()
-				if !synced {
-					log.Log.Info("Waiting for cache sync from argo")
-					return
-				}
 				util.OnArgoUpdate(newObj, spec, runningHost)
 			},
 		})
 	}
 	// go podInformer.Run(context.Background().Done())
-	if r.InformerCount < 2 {
-		log.Log.Info("Starting dynamic informer factory")
-		nsFactory.Start(ctx.Done())
-		r.InformerCount++
-	}
-	// TO DO:
-	// NNCP, CO, Sub, catalogsource
-	log.Log.Info("Waiting for cache sync")
-	var isSynced bool
-	if spec.HubCluster != nil && *spec.HubCluster {
-		log.Log.Info("Waiting for cache sync from hub")
-		isSynced = cache.WaitForCacheSync(ctx.Done(), podInformer.HasSynced, nodeInformer.HasSynced, mcpInformer.HasSynced, policyInformer.HasSynced, coInformer.HasSynced, nncpInformer.HasSynced, catalogInformer.HasSynced, csvInformer.HasSynced, mcInformer.HasSynced, argoInformer.HasSynced, tpInformer.HasSynced)
-	} else {
-		log.Log.Info("Waiting for cache sync from non-hub")
-		isSynced = cache.WaitForCacheSync(ctx.Done(), podInformer.HasSynced, nodeInformer.HasSynced, mcpInformer.HasSynced, policyInformer.HasSynced, coInformer.HasSynced, nncpInformer.HasSynced, catalogInformer.HasSynced, csvInformer.HasSynced, tpInformer.HasSynced)
-	}
-	mux.Lock()
-	synced = isSynced
-	mux.Unlock()
-	log.Log.Info("cache sync is completed")
-	if !isSynced {
-		return ctrl.Result{}, fmt.Errorf("failed to sync")
-	}
+	log.Log.Info("Starting dynamic informer factory")
+	nsFactory.Start(ctx.Done())
 	report(ocphealthcheckv1.ConditionTrue, "pod informers compiled successfully", nil)
 	return ctrl.Result{}, nil
 }
