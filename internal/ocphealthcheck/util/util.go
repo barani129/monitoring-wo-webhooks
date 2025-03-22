@@ -479,7 +479,6 @@ func OnPolicyAdd(newObj interface{}, spec *ocpscanv1.OcpHealthCheckSpec, status 
 		log.Log.Info(fmt.Sprintf("New policy.open-cluster-management.io/v1 %s has been added to namespace %s", policy.Name, policy.Namespace))
 	} else {
 		log.Log.Info(fmt.Sprintf("New child policy %s has been added to namespace %s, possible CGU update is in progress, please check HUB cluster", policy.Name, policy.Namespace))
-
 	}
 }
 
