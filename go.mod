@@ -3,12 +3,10 @@ module github.com/barani129/monitoring-wo-webhooks
 go 1.23.3
 
 require (
-	github.com/nmstate/kubernetes-nmstate/api v0.0.0-20240422131619-bc2ede247e1a
 	github.com/onsi/ginkgo/v2 v2.22.1
 	github.com/onsi/gomega v1.36.2
 	github.com/openshift/api v0.0.0-20250313134101-8a7efbfb5316
 	github.com/openshift/cluster-node-tuning-operator v0.0.0-20250308031438-33b83c7ca017
-	github.com/operator-framework/api v0.30.0
 	github.com/yl2chen/cidranger v1.0.2
 	go.universe.tf/metallb v0.14.8
 	k8s.io/api v0.32.2
@@ -16,14 +14,11 @@ require (
 	k8s.io/client-go v0.32.2
 	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738
 	kubevirt.io/api v1.2.2
-	open-cluster-management.io/api v0.16.1
-	open-cluster-management.io/governance-policy-propagator v0.16.0
 	sigs.k8s.io/controller-runtime v0.20.2
 )
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emicklei/go-restful/v3 v3.12.1 // indirect
@@ -59,8 +54,8 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
-	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
+	github.com/stretchr/testify v1.10.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect

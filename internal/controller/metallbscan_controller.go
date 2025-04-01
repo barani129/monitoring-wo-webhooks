@@ -26,7 +26,6 @@ import (
 	"sync"
 	"time"
 
-	ocphealthcheckutil "github.com/barani129/monitoring-wo-webhooks/internal/ocphealthcheck/util"
 	mcfgv1 "github.com/openshift/api/machineconfiguration/v1"
 	cidrranger "github.com/yl2chen/cidranger"
 	metal1 "go.universe.tf/metallb/api/v1beta1"
@@ -468,27 +467,9 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	var wg sync.WaitGroup
 	if status.LastRunTime == nil {
-		// Check tuned profiles
-		// _, affprofiles, err := retrieveTunedProfiles(*clientset)
-		// if err != nil && k8serrors.IsNotFound(err) {
-		// 	log.Log.Info("no tuned.openshift.io profiles configured")
-		// } else if err != nil {
-		// 	log.Log.Info("Error retrieving tuned.openshift.io profiles")
-		// } else {
-		// 	if len(affprofiles) > 0 {
-		// 		for _, prof := range affprofiles {
-		// 			profile := strings.Split(prof, ":")
-		// 			if !slices.Contains(status.FailedChecks, fmt.Sprintf("Tuned profile %s in node %s is either degraded or not applied", profile[0], profile[1])) {
-		// 				if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-		// 					util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/files/metallb/.%s-%s.txt", profile[0], profile[1]), spec, fmt.Sprintf("Tuned profile %s in node %s is either degraded or not applied in cluster %s", profile[0], profile[1], runningHost))
-		// 				}
-		// 			}
-		// 		}
-		// 	}
-		// }
 		log.Log.Info(fmt.Sprintf("Staring metallbscan healthchecks in target cluster %s", runningHost))
 		log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
-		mcpRunning, err := ocphealthcheckutil.CheckMCPINProgress(clientset)
+		mcpRunning, err := util.CheckMCPINProgress(clientset)
 		// mcpRunning, mcpName, err := isMcpUpdating(*clientset)
 		if err != nil && k8serrors.IsNotFound(err) {
 			log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
@@ -498,9 +479,9 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		if mcpRunning {
 			log.Log.Info("machineconfigpool update is in progress, exiting")
 			if !slices.Contains(status.FailedChecks, "MachineConfigPool update is in progress") {
-				if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
-					util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/files/metallb/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool update is in progress in cluster %s", runningHost))
-				}
+				// if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+				// 	util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/files/metallb/.%s.txt", "mcp"), spec, fmt.Sprintf("MachineConfigPool update is in progress in cluster %s", runningHost))
+				// }
 				status.FailedChecks = append(status.FailedChecks, "MachineConfigPool update is in progress")
 			}
 			return ctrl.Result{RequeueAfter: defaultHealthCheckIntervalMetal}, nil
@@ -656,7 +637,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 
 		log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
-		mcpRunning, err = ocphealthcheckutil.CheckMCPINProgress(clientset)
+		mcpRunning, err = util.CheckMCPINProgress(clientset)
 		// mcpRunning, mcpName, err = isMcpUpdating(*clientset)
 		if err != nil && k8serrors.IsNotFound(err) {
 			log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
@@ -764,7 +745,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				}
 			}
 		}
-		mcpRunning, err = ocphealthcheckutil.CheckMCPINProgress(clientset)
+		mcpRunning, err = util.CheckMCPINProgress(clientset)
 		// mcpRunning, mcpName, err = isMcpUpdating(*clientset)
 		if err != nil && k8serrors.IsNotFound(err) {
 			log.Log.Info("machineconfigpools.openshift.io/v1 is not configured in this cluster")
@@ -878,7 +859,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 
 		log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
-		mcpRunning, err = ocphealthcheckutil.CheckMCPINProgress(clientset)
+		mcpRunning, err = util.CheckMCPINProgress(clientset)
 		// mcpRunning, mcpName, err = isMcpUpdating(*clientset)
 		if err != nil && k8serrors.IsNotFound(err) {
 			log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
@@ -1014,7 +995,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			// }
 			log.Log.Info("Staring metallbscan healthchecks as configured time interval has elasped")
 			log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
-			mcpRunning, err := ocphealthcheckutil.CheckMCPINProgress(clientset)
+			mcpRunning, err := util.CheckMCPINProgress(clientset)
 			// mcpRunning, mcpName, err := isMcpUpdating(*clientset)
 			if err != nil && k8serrors.IsNotFound(err) {
 				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
@@ -1306,7 +1287,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 
 			log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
-			mcpRunning, err = ocphealthcheckutil.CheckMCPINProgress(clientset)
+			mcpRunning, err = util.CheckMCPINProgress(clientset)
 			// mcpRunning, mcpName, err = isMcpUpdating(*clientset)
 			if err != nil && k8serrors.IsNotFound(err) {
 				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
@@ -1495,7 +1476,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 
 			log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
-			mcpRunning, err = ocphealthcheckutil.CheckMCPINProgress(clientset)
+			mcpRunning, err = util.CheckMCPINProgress(clientset)
 			// mcpRunning, mcpName, err = isMcpUpdating(*clientset)
 			if err != nil && k8serrors.IsNotFound(err) {
 				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
@@ -1703,7 +1684,7 @@ func (r *MetallbScanReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			log.Log.Info("Running BGP neighbour cleanup")
 			CheckIfBGPHopExists(r, *clientset, metallbNamespace, nodeSelector, speakerSelector, spec, status, runningHost)
 			log.Log.Info("Checking if node rolling restart is in progress machineconfigpools.openshift.io/v1")
-			mcpRunning, err = ocphealthcheckutil.CheckMCPINProgress(clientset)
+			mcpRunning, err = util.CheckMCPINProgress(clientset)
 			// mcpRunning, mcpName, err = isMcpUpdating(*clientset)
 			if err != nil && k8serrors.IsNotFound(err) {
 				log.Log.Info("machineconfigpools.machineconfiguration.openshift.io/v1 is not configured in this cluster")
@@ -2198,13 +2179,17 @@ func GetBGPIPRoute(r *MetallbScanReconciler, clientset kubernetes.Clientset, met
 				if podCount < 1 {
 					log.Log.Info(fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace))
 					if !slices.Contains(status.FailedChecks, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace)) {
-						util.SendEmailAlert(*node, fmt.Sprintf("/home/golanguser/files/metallb/.%s.%s.txt", util.HandleCNString(*node), "norunningspeaker"), spec, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace))
+						if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+							util.SendEmailAlert(*node, fmt.Sprintf("/home/golanguser/files/metallb/.%s.%s.txt", util.HandleCNString(*node), "norunningspeaker"), spec, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace))
+						}
 						status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace))
 					}
 
 				} else {
 					if slices.Contains(status.FailedChecks, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace)) {
-						util.SendEmailRecoveredAlert(*node, fmt.Sprintf("/home/golanguser/files/metallb/.%s.%s.txt", util.HandleCNString(*node), "norunningspeaker"), spec, fmt.Sprintf("speaker pod found in running status in node %s in namespace %s", *node, metalnamespace))
+						if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+							util.SendEmailRecoveredAlert(*node, fmt.Sprintf("/home/golanguser/files/metallb/.%s.%s.txt", util.HandleCNString(*node), "norunningspeaker"), spec, fmt.Sprintf("speaker pod found in running status in node %s in namespace %s", *node, metalnamespace))
+						}
 						idx := slices.Index(status.FailedChecks, fmt.Sprintf("no speaker pod is in running status in node %s in namespace %s", *node, metalnamespace))
 						status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
 						os.Remove(fmt.Sprintf("/home/golanguser/files/metallb/.%s.%s.txt", util.HandleCNString(*node), "norunningspeaker"))
@@ -2278,7 +2263,10 @@ func CheckIfBGPHopExists(r *MetallbScanReconciler, clientset kubernetes.Clientse
 				if err == nil && !daemon {
 					if !slices.Contains(status.FailedChecks, fmt.Sprintf("no speaker pod is found in node %s in namespace %s", nWorker, metalnamespace)) {
 						status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("no speaker pod is found in node %s in namespace %s", nWorker, metalnamespace))
-						util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/files/metallb/.%s.%s.txt", util.HandleCNString(nWorker), "nospeaker"), spec, fmt.Sprintf("no speaker pod is found in status in node %s in namespace %s", nWorker, metalnamespace))
+						if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+							util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/files/metallb/.%s.%s.txt", util.HandleCNString(nWorker), "nospeaker"), spec, fmt.Sprintf("no speaker pod is found in status in node %s in namespace %s", nWorker, metalnamespace))
+						}
+
 					}
 					log.Log.Info(fmt.Sprintf("no speaker pod is found in node %s in namespace %s", nWorker, metalnamespace))
 				} else if err == nil && daemon {
@@ -2288,7 +2276,9 @@ func CheckIfBGPHopExists(r *MetallbScanReconciler, clientset kubernetes.Clientse
 				if slices.Contains(status.FailedChecks, fmt.Sprintf("no speaker pod is found in node %s in namespace %s", nWorker, metalnamespace)) {
 					idx := slices.Index(status.FailedChecks, fmt.Sprintf("no speaker pod is found in node %s in namespace %s", nWorker, metalnamespace))
 					status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
-					util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/files/metallb/.%s.%s.txt", nWorker, "nospeaker"), spec, fmt.Sprintf("speaker pod is found in node %s in namespace %s", nWorker, metalnamespace))
+					if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+						util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/files/metallb/.%s.%s.txt", nWorker, "nospeaker"), spec, fmt.Sprintf("speaker pod is found in node %s in namespace %s", nWorker, metalnamespace))
+					}
 					os.Remove(fmt.Sprintf("/home/golanguser/files/metallb/.%s.%s.txt", util.HandleCNString(nWorker), "nospeaker"))
 				}
 				outFile, err := os.OpenFile(fmt.Sprintf("/home/golanguser/files/metallb/.%s-bgphop.txt", pods[0]), os.O_CREATE|os.O_RDWR, 0644)
@@ -2329,7 +2319,9 @@ func CheckBGPHopWorkers(r *MetallbScanReconciler, clientset kubernetes.Clientset
 			if err == nil && !daemon {
 				if !slices.Contains(status.FailedChecks, fmt.Sprintf("no speaker pod is found in node %s in namespace %s", node.Name, metalnamespace)) {
 					status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("no speaker pod is found in node %s in namespace %s", node.Name, metalnamespace))
-					util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/files/metallb/.%s.%s.txt", util.HandleCNString(node.Name), "nospeaker"), spec, fmt.Sprintf("no speaker pod is found in status in node %s in namespace %s", node.Name, metalnamespace))
+					if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+						util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/files/metallb/.%s.%s.txt", util.HandleCNString(node.Name), "nospeaker"), spec, fmt.Sprintf("no speaker pod is found in status in node %s in namespace %s", node.Name, metalnamespace))
+					}
 				}
 				log.Log.Info(fmt.Sprintf("no speaker pod is found in node %s in namespace %s", node.Name, metalnamespace))
 			} else if err == nil && daemon {
@@ -2340,7 +2332,9 @@ func CheckBGPHopWorkers(r *MetallbScanReconciler, clientset kubernetes.Clientset
 			if slices.Contains(status.FailedChecks, fmt.Sprintf("no speaker pod is found in node %s in namespace %s", node.Name, metalnamespace)) {
 				idx := slices.Index(status.FailedChecks, fmt.Sprintf("no speaker pod is found in node %s in namespace %s", node.Name, metalnamespace))
 				status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
-				util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/files/metallb/.%s.%s.txt", node.Name, "nospeaker"), spec, fmt.Sprintf("speaker pod is found in node %s in namespace %s", node.Name, metalnamespace))
+				if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+					util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/files/metallb/.%s.%s.txt", node.Name, "nospeaker"), spec, fmt.Sprintf("speaker pod is found in node %s in namespace %s", node.Name, metalnamespace))
+				}
 				os.Remove(fmt.Sprintf("/home/golanguser/files/metallb/.%s.%s.txt", util.HandleCNString(node.Name), "nospeaker"))
 			}
 			outFile, err := os.OpenFile(fmt.Sprintf("/home/golanguser/files/metallb/.%s-bgphop.txt", pods[0]), os.O_CREATE|os.O_RDWR, 0644)
@@ -2354,7 +2348,9 @@ func CheckBGPHopWorkers(r *MetallbScanReconciler, clientset kubernetes.Clientset
 			}
 			if len(hops) != 0 {
 				if slices.Contains(status.FailedChecks, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name)) {
-					util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/files/metallb/.%s.%s.txt", util.HandleCNString(node.Name), "nobgphopsspeaker"), spec, fmt.Sprintf("hops are found in speaker pod %s running in node %s", pods[0], node.Name))
+					if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+						util.SendEmailRecoveredAlert(runningHost, fmt.Sprintf("/home/golanguser/files/metallb/.%s.%s.txt", util.HandleCNString(node.Name), "nobgphopsspeaker"), spec, fmt.Sprintf("hops are found in speaker pod %s running in node %s", pods[0], node.Name))
+					}
 					idx := slices.Index(status.FailedChecks, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name))
 					status.FailedChecks = deleteElementSlice(status.FailedChecks, idx)
 					os.Remove(fmt.Sprintf("/home/golanguser/files/metallb/.%s.%s.txt", util.HandleCNString(node.Name), "nobgphopsspeaker"))
@@ -2390,7 +2386,9 @@ func CheckBGPHopWorkers(r *MetallbScanReconciler, clientset kubernetes.Clientset
 					log.Log.Info(fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s, alering spec.ignoreNoBGPHop is set to be disabled so ignoring", pods[0], node.Name))
 				} else {
 					if !slices.Contains(status.FailedChecks, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name)) {
-						util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/files/metallb/.%s.%s.txt", util.HandleCNString(node.Name), "nobgphopsspeaker"), spec, fmt.Sprintf("no configured hops are found (show ip bgp nexthop) in speaker pod %s running in node %s", pods[0], node.Name))
+						if spec.SuspendEmailAlert != nil && !*spec.SuspendEmailAlert {
+							util.SendEmailAlert(runningHost, fmt.Sprintf("/home/golanguser/files/metallb/.%s.%s.txt", util.HandleCNString(node.Name), "nobgphopsspeaker"), spec, fmt.Sprintf("no configured hops are found (show ip bgp nexthop) in speaker pod %s running in node %s", pods[0], node.Name))
+						}
 						status.FailedChecks = append(status.FailedChecks, fmt.Sprintf("no configured hops are found in speaker pod %s running in node %s", pods[0], node.Name))
 					}
 				}
