@@ -32,7 +32,6 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	monitoringv1 "github.com/barani129/monitoring-wo-webhooks/api/v1"
 	monitoringv1alpha1 "github.com/barani129/monitoring-wo-webhooks/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
@@ -74,9 +73,6 @@ var _ = BeforeSuite(func() {
 	Expect(cfg).NotTo(BeNil())
 
 	err = monitoringv1alpha1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-
-	err = monitoringv1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
