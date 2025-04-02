@@ -47,7 +47,12 @@ WORKDIR /home/golanguser
 COPY --from=builder /home/golanguser/manager .
 USER 65532:65532
 RUN mkdir -p /home/golanguser/files
+RUN mkdir -p /home/golanguser/files/container
+RUN mkdir -p /home/golanguser/files/port
+RUN mkdir -p /home/golanguser/files/metallb
+RUN mkdir -p /home/golanguser/files/vmscan
 RUN chown -R golanguser:golanguser /home/golanguser/files/
+RUN chmod -R 775 /home/golanguser/files/
 USER 65532:65532
 
 

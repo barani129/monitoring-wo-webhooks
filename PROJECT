@@ -56,13 +56,4 @@ resources:
   kind: MetallbScan
   path: github.com/barani129/monitoring-wo-webhooks/api/v1alpha1
   version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: spark.co.nz
-  group: monitoring
-  kind: OcpHealthCheck
-  path: github.com/barani129/monitoring-wo-webhooks/api/v1
-  version: v1
 version: "3"
