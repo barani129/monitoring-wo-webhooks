@@ -116,10 +116,6 @@ func main() {
 	// 	TLSOpts: tlsOpts,
 	// })
 
-	if err := CreateDirs(); err != nil {
-		os.Exit(1)
-	}
-
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
@@ -259,19 +255,4 @@ func getInClusterNamespace() (string, error) {
 		return "", fmt.Errorf("error reading namespace file: %w", err)
 	}
 	return string(namespace), nil
-}
-
-func CreateDirs() error {
-	for _, path := range []string{"container", "port", "metallb", "vmscan"} {
-		dirName := fmt.Sprintf("/home/golanguser/files/%s", path)
-		if _, err := os.ReadDir(dirName); err != nil {
-			if os.IsNotExist(err) {
-				err := os.Mkdir(dirName, 0775)
-				if err != nil {
-					return err
-				}
-			}
-		}
-	}
-	return nil
 }
