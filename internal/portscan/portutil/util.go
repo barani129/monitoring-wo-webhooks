@@ -425,6 +425,7 @@ func SendEmailRecoveredAlert(nodeName string, filename string, spec *v1alpha1.Po
 			if err != nil {
 				fmt.Printf("Failed to send the alert: %s", err)
 			}
+			os.Remove(filename)
 		}
 	}
 }
