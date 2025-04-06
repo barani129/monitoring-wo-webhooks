@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"time"
 
@@ -359,24 +360,37 @@ func basicAuth(username, password string) string {
 
 func SendEmailAlert(nodeName string, filename string, spec *v1alpha1.PortScanSpec, alert string) {
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		err = writeFile(filename, "sent")
+		if err != nil {
+			log.Printf("unable to write to file %s", filename)
+			return
+		}
 		message := fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: PortScan alert from %s" "" "Alert: %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", nodeName, alert, spec.Email, spec.RelayHost, spec.Email)
 		cmd3 := exec.Command("/bin/bash", "-c", message)
 		err := cmd3.Run()
 		if err != nil {
 			fmt.Printf("Failed to send the alert: %s", err)
+			return
 		}
-		writeFile(filename, "sent")
+
 	} else {
-		data, _ := ReadFile(filename)
+		data, err := ReadFile(filename)
+		if err != nil {
+			log.Printf("unable to read from file %s", filename)
+		}
 		if data != "sent" {
+			os.Truncate(filename, 0)
+			err = writeFile(filename, "sent")
+			if err != nil {
+				log.Printf("unable to write to file %s", filename)
+				return
+			}
 			message := fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: PortScan alert from %s" "" "Alert: %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", nodeName, alert, spec.Email, spec.RelayHost, spec.Email)
 			cmd3 := exec.Command("/bin/bash", "-c", message)
 			err := cmd3.Run()
 			if err != nil {
 				fmt.Printf("Failed to send the alert: %s", err)
 			}
-			os.Truncate(filename, 0)
-			writeFile(filename, "sent")
 		}
 	}
 }
@@ -402,6 +416,7 @@ func SendEmailRecoveredAlert(nodeName string, filename string, spec *v1alpha1.Po
 		data, err := ReadFile(filename)
 		if err != nil {
 			fmt.Printf("Failed to send the alert: %s", err)
+			return
 		}
 		if data == "sent" {
 			message := fmt.Sprintf(`/usr/bin/printf '%s\n' "Subject: PortScan alert from %s" ""  "Resolved: %s" | /usr/sbin/sendmail -f %s -S %s %s`, "%s", nodeName, commandToRun, spec.Email, spec.RelayHost, spec.Email)
@@ -428,4 +443,9 @@ func ReadFile(filename string) (string, error) {
 		return "", err
 	}
 	return string(data), nil
+}
+
+func HandleCNString(cn string) string {
+	var nonAlphanumericRegex = regexp.MustCompile(`[^a-zA-Z0-9 ]+`)
+	return nonAlphanumericRegex.ReplaceAllString(cn, "")
 }
