@@ -257,7 +257,6 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 						}
 						idx := slices.Index(clusterStatus.AffectedTargets, target)
 						clusterStatus.AffectedTargets = deleteElementSlice(clusterStatus.AffectedTargets, idx)
-						os.Remove(fmt.Sprintf("/home/golanguser/files/port/.%s-%s.txt", clusterUtil.HandleCNString(ip[0]), ip[1]))
 						os.Remove(fmt.Sprintf("/home/golanguser/files/port/.%s-%s-ext.txt", clusterUtil.HandleCNString(ip[0]), ip[1]))
 					}
 				}
@@ -317,7 +316,6 @@ func (r *PortScanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 							}
 							idx := slices.Index(clusterStatus.AffectedTargets, target)
 							clusterStatus.AffectedTargets = deleteElementSlice(clusterStatus.AffectedTargets, idx)
-							os.Remove(fmt.Sprintf("/home/golanguser/files/port/.%s-%s.txt", clusterUtil.HandleCNString(ip[0]), ip[1]))
 							os.Remove(fmt.Sprintf("/home/golanguser/files/port/.%s-%s-ext.txt", clusterUtil.HandleCNString(ip[0]), ip[1]))
 						}
 
